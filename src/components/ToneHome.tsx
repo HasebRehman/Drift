@@ -122,6 +122,7 @@ function buildProductCard(tpl: string, p: DriftProduct, cfg: CardCfg) {
   c = c.split(cfg.tplHandle).join(url);
   c = c.split(`aria-label="${cfg.tplAria}"`).join(`aria-label="${p.title}"`);
   c = c.split(cfg.tplAlt).join(p.title);
+  // all of the product's photos: >1 photo -> hover slideshow, 1 photo -> no hover scrolling
   const imgs = p.images.map(imgUrl);
   // images: main + hover slides (one slide per extra photo)
   let k = 0;
@@ -136,6 +137,8 @@ function buildProductCard(tpl: string, p: DriftProduct, cfg: CardCfg) {
     const h0 = c.indexOf('<div class="product__media__hover');
     const h1 = h0 >= 0 ? c.indexOf('</a>', h0) : -1;
     if (h0 >= 0 && h1 >= 0) c = c.slice(0, h0) + c.slice(h1);
+    // the main photo must not slide away on hover when there is no second photo to slide in
+    c = c.split(' product__media__image--hover-slide').join('');
   } else {
     // remove surplus slides (keep imgs.length - 1)
     const slideStarts: number[] = [];
@@ -314,7 +317,11 @@ function withSideMenu(html: string) {
   }
   return out;
 }
-const TOP_HTML = withSideMenu(TONE_TOP_HTML);
+// Final header state baked into the server HTML (hamburger layout) so nothing flashes on page load.
+const TOP_HTML = withSideMenu(TONE_TOP_HTML).replace(
+  'site-header site-header--fixed site-header--nav-left site-header--nav-light site-header--has-logo',
+  'site-header site-header--fixed site-header--nav-left site-header--nav-light site-header--has-logo site-header--compress'
+);
 
 // Centre the hero headline + button (Tone's default is bottom-left).
 const MAIN_HTML = withDriftProducts(withCategories(withHeroSlides(TONE_MAIN_HTML)))
@@ -325,7 +332,7 @@ const MAIN_HTML = withDriftProducts(withCategories(withHeroSlides(TONE_MAIN_HTML
 // /collections/shop-all page: Tone collection-page structure + driftretail products,
 // using the same product card as the home page "Featured Sets" carousel.
 // ---------------------------------------------------------------------------
-function shopAllCards(html: string): string {
+function collectionCards(html: string, products: DriftProduct[]): string {
   const st = html.indexOf('id="FeaturedCollection--template--24202507026729__section_collection_8QxVfk"');
   if (st < 0) return '';
   const end = html.indexOf('</section>', st);
@@ -345,9 +352,9 @@ function shopAllCards(html: string): string {
     tplAlt: 'TONE_Fresh_Collection_1x1_1500.jpg',
     tplAria: 'Fresh Scent Layering Routine',
     tplProductId: '15384659493161',
-    products: SHOP_ALL,
+    products,
   };
-  return SHOP_ALL.map((p, i) =>
+  return products.map((p, i) =>
     buildProductCard(tpl, p, cfg)
       .replace('carousel__item one-quarter', 'grid__item one-quarter')
       .replace('grid-item--column-1', `grid-item--column-${(i % 4) + 1}`)
@@ -356,7 +363,45 @@ function shopAllCards(html: string): string {
   ).join('');
 }
 
-function shopAllMain(html: string): string {
+// Trust row under the product grid (same "icons row" component/design as the home page, white background).
+const TRUST_ITEMS = [
+  {
+    title: 'FASTEST DELIVERY NATIONWIDE',
+    svg: '<svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-delivery" viewBox="0 0 82 82"><path d="M27 30h40v12H27zM31 42h32v22H31zM47 30v34M47 30c-6-11-19-7-13 0M47 30c6-11 19-7 13 0"/><path d="M5 62h14l12 6h20a5 5 0 0 0 0-10H38"/></svg>',
+  },
+  {
+    title: 'SECURE PAYMENTS',
+    svg: '<svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-card" viewBox="0 0 82 82"><rect x="8" y="19" width="66" height="44" rx="5"/><path d="M8 34h66M19 50h18"/></svg>',
+  },
+  {
+    title: 'DEDICATED CUSTOMER SUPPORT',
+    svg: '<svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-support" viewBox="0 0 82 82"><circle cx="27" cy="42" r="9"/><path d="M8 72c0-12 8-19 19-19s19 7 19 19"/><path d="M44 12h26a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H59l-8 8v-8h-7a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z"/><path d="M53 27h1M60 27h1M67 27h1"/></svg>',
+  },
+];
+function trustRow(): string {
+  const id = 'IconsRow--shop-all-trust';
+  const items = TRUST_ITEMS.map((t, i) => {
+    const pos = i === 0 ? 'icons-row-item--first-on-row icons-row-item--odd icons-row-item--first' : i === 2 ? 'icons-row-item--last-on-row icons-row-item--odd icons-row-item--last' : 'icons-row-item--even icons-row-item--pre-last';
+    return (
+      `<div class="icons-row-item grid__item ${pos}"><div class="icons-row-item__wrapper">` +
+      `<div class="icons-row-item__icon icon-stroke">${t.svg}</div>` +
+      `<div class="icons-row-item__content"><h3 class="icons-row-item__title">${t.title}</h3></div>` +
+      `</div></div>`
+    );
+  }).join('');
+  return (
+    `<div id="shopify-section-shop-all-trust" class="shopify-section">` +
+    `<style>#${id}{--PT:40px;--PB:40px;--icon-size:40px;--icon-max-size:40px;--bg:#ffffff;background:#ffffff;--border:#333333;--text:#000000;--text-lighten:#333333}` +
+    `@media screen and (max-width:767px){#${id}{--icon-max-size:40px}#${id} .icons-row-item__title{font-size:15px}}` +
+    `#${id} .icons-row-item__title{font-size:18px;letter-spacing:.06em;line-height:1.3;margin:0}` +
+    `#${id} .icons-row__slider{--adjust-heading:calc(var(--FONT-ADJUST-HEADING) * 1.0);--adjust-body:calc(var(--FONT-ADJUST-BODY) * 0.9)}</style>` +
+    `<section id="${id}" class="section-padding icons-row icons-row--borders-vertical icons-row--borders-horizontal icons-row--spaced" data-section-id="shop-all-trust" data-section-type="icons-row">` +
+    `<div class="wrapper"><div class="icons-row__wrapper text-center"><div class="icons-row__slider stacked--mobile text-center items--3" role="group">${items}</div></div></div>` +
+    `</section></div>`
+  );
+}
+
+function collectionMain(html: string, products: DriftProduct[]): string {
   const id = 'ShopAllCollection';
   return (
     `<main id="MainContent" class="main-content" data-main>` +
@@ -365,15 +410,26 @@ function shopAllMain(html: string): string {
     `#${id}{padding-top:36px!important;--PT:36px;--grid:repeat(4,minmax(0,1fr));--grid-tablet:repeat(3,minmax(0,1fr));--grid-mobile:repeat(2,minmax(0,1fr))}` +
     `@media (max-width:767px){#${id}{padding-top:20px!important;--PT:20px}}` +
     `</style>` +
-    `<section id="${id}" class="section-padding collection-section collection--filters-disabled collection--breadcrumbs-disabled collection collection-items collection-items--4" data-section-type="collection">` +
+    `<section id="${id}" class="section-padding collection-section collection--filters-disabled collection--breadcrumbs-disabled collection collection-items collection-items--4">` +
     `<div class="wrapper--full-padded">` +
     `<div class="collection__wrapper"><div class="collection__products">` +
-    `<div class="grid grid--mobile">${shopAllCards(html)}</div>` +
+    `<div class="grid grid--mobile">${collectionCards(html, products)}</div>` +
     `</div></div>` +
-    `</div></section></div>`
+    `</div></section></div>` +
+    trustRow()
   );
 }
-const SHOP_ALL_MAIN = shopAllMain(TONE_MAIN_HTML);
+// Runs while the HTML is parsed (before first paint): collection pages use Tone's collection template styles.
+const COLLECTION_BODY_SCRIPT =
+  '<script>document.body.className=document.body.className.replace("template-index","template-collection")</script>';
+const SHOP_ALL_MAIN = collectionMain(TONE_MAIN_HTML, SHOP_ALL);
+const MEN_MAIN = collectionMain(TONE_MAIN_HTML, MEN_PRODUCTS);
+const WOMEN_MAIN = collectionMain(TONE_MAIN_HTML, WOMEN_PRODUCTS);
+// Bundles = the combo products (Hero-Rebel-Ignite, Hero-Muse, ...), which have a single photo each.
+const BUNDLES_MAIN = collectionMain(
+  TONE_MAIN_HTML,
+  SHOP_ALL.filter((p) => p.images.length === 1)
+);
 
 
 const SCRIPTS = ['/js/tone-init.js', '/js/vendor.js', '/js/theme.js'];
@@ -395,7 +451,7 @@ const prices = (t: string) =>
   (t.replace(/,/g, '').match(/(?:\$|Rs\.?)\s*[\d.]+/gi) || []).map((x) => parseFloat(x.replace(/[^\d.]/g, '')));
 
 /** Whole Tone homepage: Tone's original markup + Tone's own theme scripts. */
-export function ToneHome({ page = 'home' }: { page?: 'home' | 'shop-all' }) {
+export function ToneHome({ page = 'home' }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles' }) {
   const { addItem, openCart } = useCart();
 
   // Keep our cart (Tone's Shopify cart API doesn't exist here): intercept before theme.js sees the event.
@@ -468,7 +524,7 @@ export function ToneHome({ page = 'home' }: { page?: 'home' | 'shop-all' }) {
 
   // Collection page uses Tone's collection template styles.
   useEffect(() => {
-    if (page !== 'shop-all') return;
+    if (page === 'home') return;
     document.body.classList.replace('template-index', 'template-collection');
   }, [page]);
 
@@ -503,7 +559,7 @@ export function ToneHome({ page = 'home' }: { page?: 'home' | 'shop-all' }) {
     <div
       id="tone-root"
       suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: TOP_HTML + (page === 'shop-all' ? SHOP_ALL_MAIN : MAIN_HTML) + '</main>' + TONE_FOOTER_HTML }}
+      dangerouslySetInnerHTML={{ __html: (page === 'home' ? '' : COLLECTION_BODY_SCRIPT) + TOP_HTML + (page === 'shop-all' ? SHOP_ALL_MAIN : page === 'men' ? MEN_MAIN : page === 'women' ? WOMEN_MAIN : page === 'bundles' ? BUNDLES_MAIN : MAIN_HTML) + '</main>' + TONE_FOOTER_HTML }}
     />
   );
 }

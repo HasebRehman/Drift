@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html className="no-js no-touch page-loading" lang="en" suppressHydrationWarning>
+    <html className="js no-touch page-loading" lang="en" suppressHydrationWarning>
       <head>
         {/* Preload Tone fonts */}
         <link

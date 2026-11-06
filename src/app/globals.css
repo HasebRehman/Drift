@@ -80,3 +80,20 @@
   height: auto;
   aspect-ratio: 1 / 1;
 }
+
+/* Before Tone's script turns a carousel into a slider, keep it on one row (no wrap / layout jump) */
+[data-slider]:not(.flickity-enabled) {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+/* Top announcement bar: always show its text, even before Tone's ticker script starts it */
+.announcement__scale.ticker--unloaded {
+  opacity: 1 !important;
+  position: static !important;
+  width: auto !important;
+}
+.announcement-bar-static,
+.announcement {
+  visibility: visible !important;
+}
