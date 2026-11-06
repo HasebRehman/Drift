@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import type { ToneProduct } from '@/data/driftData';
+import { SHOP_ALL, type DriftProduct } from '@/data/driftProducts';
 import { TONE_MAIN_HTML } from './ToneMainContentHtml';
 import { TONE_TOP_HTML, TONE_FOOTER_HTML } from './ToneChromeHtml';
 
@@ -57,10 +58,320 @@ function withCategories(html: string) {
   return html.slice(0, start) + sec + html.slice(end);
 }
 
+// Product cards in the first split section: data + images from driftretail.com/collections/women
+// (card markup/styling stays Tone's; only text, prices, images and links change).
+const CDN = 'https://cdn.shopify.com/s/files/1/0739/6166/8743/files/';
+const WOMEN_PRODUCTS: DriftProduct[] = [
+  {
+    id: '8949395259527',
+    handle: 'baddie-too-rare-too-real',
+    title: 'BADDIE — Too Rare, Too Real',
+    price: 'Rs.1,399',
+    compare: 'Rs.1,999',
+    pct: 30,
+    images: ['IT1.jpg?v=1793363872', 'IT2.jpg?v=1793363872', 'IT3.jpg?v=1793363871'],
+  },
+  {
+    id: '8949397848199',
+    handle: 'it-girl-in-my-element',
+    title: 'IT GIRL — In My Element',
+    price: 'Rs.1,399',
+    compare: 'Rs.1,999',
+    pct: 30,
+    images: [
+      'IT1_b941ee24-b4ce-4cae-84b6-aa55ab7973a0.jpg?v=1793364137',
+      'IT2_b6b7c519-87c7-4668-be22-772b982e362d.jpg?v=1793364137',
+      'IT3_c4635fea-9ee4-429b-82e9-07af7077cd49.jpg?v=1793364137',
+    ],
+  },
+  {
+    id: '8618891903111',
+    handle: 'muse-attraction',
+    title: 'MUSE — Grace',
+    price: 'Rs.1,399',
+    compare: 'Rs.1,999',
+    pct: 30,
+    images: ['p4_1.jpg?v=1785413472', 'P4_2.jpg?v=1785413472', 'p4_3.jpg?v=1785413472'],
+  },
+];
+const imgUrl = (f: string) => `${CDN}${f}${f.includes('?') ? '&' : '?'}width=1000`;
+function replaceBetween(s: string, a: string, b: string, neu: string, from = 0) {
+  const i = s.indexOf(a, from);
+  if (i < 0) return s;
+  const j = s.indexOf(b, i + a.length);
+  if (j < 0) return s;
+  return s.slice(0, i) + neu + s.slice(j);
+}
+type CardCfg = {
+  sectionId: string; // e.g. section_products_with_image_kqegbH
+  marker: string; // start of each product card
+  tplIndex: number; // which existing card to use as the template
+  tailMarks: string[]; // how the LAST card ends (first one found is used)
+  tplHandle: string; // template card's product handle path
+  tplTitleText: string; // text inside the title <a> of the template
+  tplAlt: string; // template main-image alt text
+  tplAria: string; // template aria-label
+  tplProductId: string; // template product id
+  products: DriftProduct[];
+  contentImage?: string; // replace the big feature image
+};
+
+function buildProductCard(tpl: string, p: DriftProduct, cfg: CardCfg) {
+  let c = tpl;
+  const url = `https://driftretail.com/products/${p.handle}`;
+  c = c.split(cfg.tplHandle).join(url);
+  c = c.split(`aria-label="${cfg.tplAria}"`).join(`aria-label="${p.title}"`);
+  c = c.split(cfg.tplAlt).join(p.title);
+  const imgs = p.images.map(imgUrl);
+  // images: main + hover slides (one slide per extra photo)
+  let k = 0;
+  c = c.replace(/<img [^>]*>/g, (m) => {
+    const idx = k++;
+    if (idx >= imgs.length) return m;
+    return `<img src="${imgs[idx]}" alt="${p.title}" width="1000" height="1000" loading="lazy" class="">`;
+  });
+  const slideTag = '<div class="product__media__slide" data-hover-slideshow-item>';
+  if (imgs.length <= 1) {
+    // single photo: drop the whole hover slideshow + progress bar
+    const h0 = c.indexOf('<div class="product__media__hover');
+    const h1 = h0 >= 0 ? c.indexOf('</a>', h0) : -1;
+    if (h0 >= 0 && h1 >= 0) c = c.slice(0, h0) + c.slice(h1);
+  } else {
+    // remove surplus slides (keep imgs.length - 1)
+    const slideStarts: number[] = [];
+    for (let i = c.indexOf(slideTag); i >= 0; i = c.indexOf(slideTag, i + 1)) slideStarts.push(i);
+    for (let n = slideStarts.length - 1; n >= imgs.length - 1; n--) {
+      const s = slideStarts[n];
+      const e = c.indexOf('</figure></div>', s) + '</figure></div>'.length;
+      c = c.slice(0, s) + c.slice(e);
+    }
+  }
+  // title line; drop subtitle + scent lines
+  c = replaceBetween(c, ` ${cfg.tplTitleText}</a>`, '<!-- <div class="yotpo', ` ${p.title}</a>\n  `);
+  c = replaceBetween(c, '<!-- FRESHWATER: product subtitle -->', '<!-- <p style="margin: 0 0 5px; font-size: 12px;">', '');
+  // badge ("Save 30%") if the template has one
+  if (c.includes('<span>Save ')) {
+    c = p.pct > 0 ? replaceBetween(c, '<span>Save ', '</span>', `<span>Save ${p.pct}%`) : c;
+  }
+  // price inside the Add to Cart button
+  c = replaceBetween(
+    c,
+    '<span class="product-shop-toggle__atc-sep" aria-hidden="true"> • </span>',
+    '</span></span>',
+    `<span class="product-shop-toggle__atc-sep" aria-hidden="true"> • </span>\n        ${p.price}\n` +
+      (p.compare ? `<s class="product-shop-toggle__compare-price">${p.compare}</s>` : '')
+  );
+  c = c.replace(/(<input type="hidden" name="product-id" value=")\d+(")/, `$1${p.id}$2`);
+  c = c.split(cfg.tplProductId).join(p.id);
+  return c;
+}
+
+function withProducts(html: string, cfg: CardCfg) {
+  const st = html.indexOf(`id="FeaturedCollection--template--24202507026729__${cfg.sectionId}"`);
+  if (st < 0) return html;
+  const end = html.indexOf('</section>', st);
+  let sec = html.slice(st, end);
+  const starts: number[] = [];
+  for (let i = sec.indexOf(cfg.marker); i >= 0; i = sec.indexOf(cfg.marker, i + 1)) starts.push(i);
+  if (starts.length < cfg.tplIndex + 2) return html;
+  const tpl = sec.slice(starts[cfg.tplIndex], starts[cfg.tplIndex + 1]);
+  const lastStart = starts[starts.length - 1];
+  let lastEnd = -1;
+  for (const tm of cfg.tailMarks) {
+    const t = sec.lastIndexOf(tm);
+    if (t > lastStart) {
+      lastEnd = t + tm.length;
+      break;
+    }
+  }
+  if (lastEnd < 0) return html;
+  const cards = cfg.products.map((p) => buildProductCard(tpl, p, cfg)).join('');
+  sec = sec.slice(0, starts[0]) + cards + sec.slice(lastEnd);
+  if (cfg.contentImage) {
+    const ci = sec.indexOf('featured-collection__content-image');
+    const i0 = sec.indexOf('<img ', ci);
+    const i1 = sec.indexOf('>', i0) + 1;
+    if (ci >= 0 && i0 >= 0) {
+      sec =
+        sec.slice(0, i0) +
+        `<img src="${cfg.contentImage}" alt="Drift" width="2000" height="2000" loading="eager" class="object-cover" style="opacity: 1 !important; visibility: visible !important;">` +
+        sec.slice(i1);
+    }
+  }
+  return html.slice(0, st) + sec + html.slice(end);
+}
+
+const MEN_PRODUCTS: DriftProduct[] = [
+  {
+    id: '8618882433159',
+    handle: 'hero-confidence',
+    title: 'HERO — Legacy',
+    price: 'Rs.1,399',
+    compare: 'Rs.1,999',
+    pct: 30,
+    images: ['p1_1.jpg?v=1785413541', 'p1_2.jpg?v=1785413541', 'p1_3.jpg?v=1785413541'],
+  },
+  {
+    id: '8618895573127',
+    handle: 'rebel-expression',
+    title: 'REBEL — Freedom',
+    price: 'Rs.1,399',
+    compare: 'Rs.1,999',
+    pct: 30,
+    images: ['p2_1.jpg?v=1785413436', 'p2_2.jpg?v=1785413437', 'p2_3.jpg?v=1785413436'],
+  },
+  {
+    id: '8618890133639',
+    handle: 'ignite-energy',
+    title: 'IGNITE — Momentum',
+    price: 'Rs.1,399',
+    compare: 'Rs.1,999',
+    pct: 30,
+    images: ['p3_1.jpg?v=1785413503', 'p3_2.jpg?v=1785413503', 'p3_3.jpg?v=1785413503'],
+  },
+];
+
+const SPLIT_MARKER = '<div class="product-grid-item grid__item';
+const SPLIT_TAIL = ['</form></div>\n</div>\n</div>'];
+
+function withDriftProducts(html: string) {
+  // "Featured Sets" carousel -> driftretail shop-all
+  html = withProducts(html, {
+    sectionId: 'section_collection_8QxVfk',
+    marker: '<div class="product-grid-item carousel__item',
+    tplIndex: 0,
+    tailMarks: ['</a></div>\n</div>\n</div>', '</form></div>\n</div>\n</div>'],
+    tplHandle: '/products/fresh-scent-layering-routine',
+    tplTitleText: 'Scent Layering Routine',
+    tplAlt: 'TONE_Fresh_Collection_1x1_1500.jpg',
+    tplAria: 'Fresh Scent Layering Routine',
+    tplProductId: '15384659493161',
+    products: SHOP_ALL,
+  });
+  html = withProducts(html, {
+    sectionId: 'section_products_with_image_kqegbH',
+    marker: SPLIT_MARKER,
+    tplIndex: 0,
+    tailMarks: SPLIT_TAIL,
+    tplHandle: '/products/island-breeze-body-wash',
+    tplTitleText: 'Body Wash',
+    tplAlt: 'TONE - Body Wash - Island Breeze',
+    tplAria: 'Island Breeze Body Wash',
+    tplProductId: '10096384508201',
+    products: WOMEN_PRODUCTS,
+  });
+  return withProducts(html, {
+    sectionId: 'section_products_with_image_ncxLcR',
+    marker: SPLIT_MARKER,
+    tplIndex: 1,
+    tailMarks: SPLIT_TAIL,
+    tplHandle: '/products/island-breeze-deodorant',
+    tplTitleText: 'Deodorant',
+    tplAlt: 'TONE - Deodorant - Island Breeze',
+    tplAria: 'Island Breeze Deodorant',
+    tplProductId: '10096388604201',
+    products: MEN_PRODUCTS,
+    contentImage: '/assets/p3-u.webp',
+  });
+}
+
+// Side menu (drawer): replace Tone's menu items with our four category links.
+const MENU_LINKS = [
+  { label: 'MEN', href: '/collections/men' },
+  { label: 'WOMEN', href: '/collections/women' },
+  { label: 'BUNDLES', href: '/collections/bundles' },
+  { label: 'SHOP ALL', href: '/collections/shop-all' },
+];
+function withSideMenu(html: string) {
+  const open = '<ul class="mobile-nav mobile-nav--weight-light">';
+  const a = html.indexOf(open);
+  const b = html.indexOf('</ul><ul class="mobile-nav mobile-nav--bottom', a);
+  if (a < 0 || b < 0) return html;
+  const items = MENU_LINKS.map(
+    (m) =>
+      `<li class="mobile-menu__item mobile-menu__item--level-1">\n    <a href="${m.href}" class="mobile-navlink mobile-navlink--level-1">${m.label}</a>\n  </li>`
+  ).join('');
+  let out = html.slice(0, a + open.length) + items + html.slice(b);
+
+  // remove the bottom block (Log in / Create account / Search)
+  const botStart = out.indexOf('<ul class="mobile-nav mobile-nav--bottom');
+  if (botStart >= 0) {
+    const botEnd = out.indexOf('</ul>', botStart) + '</ul>'.length;
+    out = out.slice(0, botStart) + out.slice(botEnd);
+  }
+
+  // drawer logo -> DRIFT logo (same as the header)
+  out = out.replace('<a href="https://tone.shop/" class="drawer__logo">', '<a href="/" class="drawer__logo">');
+  const logoA = out.indexOf('<a href="/" class="drawer__logo">');
+  const logoA2 = logoA >= 0 ? logoA : out.indexOf('class="drawer__logo"');
+  if (logoA2 >= 0) {
+    const i0 = out.indexOf('<img ', logoA2);
+    const i1 = out.indexOf('>', i0) + 1;
+    out =
+      out.slice(0, i0) +
+      '<img src="/assets/drift_black.svg" alt="Drift logo" width="150" height="47" class="drawer__logo-image">' +
+      out.slice(i1);
+  }
+  return out;
+}
+const TOP_HTML = withSideMenu(TONE_TOP_HTML);
+
 // Centre the hero headline + button (Tone's default is bottom-left).
-const MAIN_HTML = withCategories(withHeroSlides(TONE_MAIN_HTML))
+const MAIN_HTML = withDriftProducts(withCategories(withHeroSlides(TONE_MAIN_HTML)))
   .replace('item--bottom-left text-left text-light', 'item--center text-center text-light')
   .replace('<span class="text-highlight__break">Shop by scent</span>', '<span class="text-highlight__break">Shop by category</span>');
+
+// ---------------------------------------------------------------------------
+// /collections/shop-all page: Tone collection-page structure + driftretail products,
+// using the same product card as the home page "Featured Sets" carousel.
+// ---------------------------------------------------------------------------
+function shopAllCards(html: string): string {
+  const st = html.indexOf('id="FeaturedCollection--template--24202507026729__section_collection_8QxVfk"');
+  if (st < 0) return '';
+  const end = html.indexOf('</section>', st);
+  const sec = html.slice(st, end);
+  const marker = '<div class="product-grid-item carousel__item';
+  const first = sec.indexOf(marker);
+  const second = sec.indexOf(marker, first + 1);
+  if (first < 0 || second < 0) return '';
+  const tpl = sec.slice(first, second);
+  const cfg: CardCfg = {
+    sectionId: 'section_collection_8QxVfk',
+    marker,
+    tplIndex: 0,
+    tailMarks: [],
+    tplHandle: '/products/fresh-scent-layering-routine',
+    tplTitleText: 'Scent Layering Routine',
+    tplAlt: 'TONE_Fresh_Collection_1x1_1500.jpg',
+    tplAria: 'Fresh Scent Layering Routine',
+    tplProductId: '15384659493161',
+    products: SHOP_ALL,
+  };
+  return SHOP_ALL.map((p, i) =>
+    buildProductCard(tpl, p, cfg)
+      .replace('carousel__item one-quarter', 'grid__item one-quarter')
+      .replace('grid-item--column-1', `grid-item--column-${(i % 4) + 1}`)
+      .replace(/data-slide\s*/, '')
+      .split('section_collection_8QxVfk').join('main-collection-shop-all')
+  ).join('');
+}
+
+function shopAllMain(html: string): string {
+  const id = 'ShopAllCollection';
+  return (
+    `<main id="MainContent" class="main-content" data-main>` +
+    `<div id="shopify-section-main-collection" class="shopify-section shopify-section--collection">` +
+    `<style>#${id}{--grid:repeat(4,minmax(0,1fr));--grid-tablet:repeat(3,minmax(0,1fr));--grid-mobile:repeat(2,minmax(0,1fr))}</style>` +
+    `<section id="${id}" class="section-padding collection-section collection--filters-disabled collection--breadcrumbs-disabled collection collection-items collection-items--4" data-section-type="collection">` +
+    `<div class="wrapper--full-padded">` +
+    `<div class="collection__wrapper"><div class="collection__products">` +
+    `<div class="grid grid--mobile">${shopAllCards(html)}</div>` +
+    `</div></div>` +
+    `</div></section></div>`
+  );
+}
+const SHOP_ALL_MAIN = shopAllMain(TONE_MAIN_HTML);
+
 
 const SCRIPTS = ['/js/tone-init.js', '/js/vendor.js', '/js/theme.js'];
 
@@ -78,10 +389,10 @@ function loadScript(src: string) {
 }
 
 const prices = (t: string) =>
-  (t.replace(/,/g, '').match(/\$\s*[\d.]+/g) || []).map((x) => parseFloat(x.replace('$', '')));
+  (t.replace(/,/g, '').match(/(?:\$|Rs\.?)\s*[\d.]+/gi) || []).map((x) => parseFloat(x.replace(/[^\d.]/g, '')));
 
 /** Whole Tone homepage: Tone's original markup + Tone's own theme scripts. */
-export function ToneHome() {
+export function ToneHome({ page = 'home' }: { page?: 'home' | 'shop-all' }) {
   const { addItem, openCart } = useCart();
 
   // Keep our cart (Tone's Shopify cart API doesn't exist here): intercept before theme.js sees the event.
@@ -152,6 +463,12 @@ export function ToneHome() {
     return () => mo.disconnect();
   }, []);
 
+  // Collection page uses Tone's collection template styles.
+  useEffect(() => {
+    if (page !== 'shop-all') return;
+    document.body.classList.replace('template-index', 'template-collection');
+  }, [page]);
+
   // Hero slideshow: one image at a time, smooth crossfade every few seconds.
   useEffect(() => {
     const slides = Array.from(document.querySelectorAll<HTMLElement>('[data-drift-hero] .drift-hero-slide'));
@@ -183,7 +500,7 @@ export function ToneHome() {
     <div
       id="tone-root"
       suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: TONE_TOP_HTML + MAIN_HTML + '</main>' + TONE_FOOTER_HTML }}
+      dangerouslySetInnerHTML={{ __html: TOP_HTML + (page === 'shop-all' ? SHOP_ALL_MAIN : MAIN_HTML) + '</main>' + TONE_FOOTER_HTML }}
     />
   );
 }
