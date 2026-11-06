@@ -9,3 +9,74 @@
   --min-h: calc(100vh - 100px);
   --min-h: calc(100svh - 100px);
 }
+
+/* Header logo: always show a single image (Tone's breakpoints hide both at exactly 1024px) */
+#SiteHeader .logo__image_mobile { display: none !important; }
+#SiteHeader .logo__image { display: block !important; }
+
+/* Hero slideshow (3 images, crossfade) */
+.drift-hero-slides {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.drift-hero-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transition: opacity 1.4s ease-in-out;
+}
+.drift-hero-slide.is-active {
+  opacity: 1;
+}
+
+/* Hero: exactly the image height (8:3) so there is no gap under the header or below the image */
+.banner-image .banner-image__inner.six-fifty-height,
+.banner-image .banner-image__inner.four-fifty-height-mobile {
+  --min-h: 0px;
+  min-height: 0;
+  aspect-ratio: 8 / 3;
+}
+@media (max-width: 767px) {
+  /* phones: taller box so the headline/button fit; image anchored to the top (no gap under the header) */
+  .banner-image .banner-image__inner.six-fifty-height,
+  .banner-image .banner-image__inner.four-fifty-height-mobile {
+    aspect-ratio: auto;
+    min-height: 60svh;
+  }
+  .drift-hero-slide > img {
+    object-position: center top;
+  }
+}
+.drift-hero-slide {
+  background: #fff;
+}
+.drift-hero-slide > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* No zoom on the hero image (disable Tone's zoom-out / scroll-zoom scaling) */
+.banner-image .banner-image__image-inner,
+.banner-image .banner-image__image-container,
+.banner-image .banner-image__image {
+  transform: none !important;
+  animation: none !important;
+  scale: none !important;
+}
+
+/* Shop by category: square cards so the square photos show in full */
+#sectionMosaicGrid--template--24202507026729__section-grid-0 .mosaic__item {
+  --min-h: 0px;
+  min-height: 0;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}

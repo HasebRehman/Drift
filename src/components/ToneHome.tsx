@@ -6,6 +6,62 @@ import type { ToneProduct } from '@/data/driftData';
 import { TONE_MAIN_HTML } from './ToneMainContentHtml';
 import { TONE_TOP_HTML, TONE_FOOTER_HTML } from './ToneChromeHtml';
 
+// Hero: replace Tone's single banner picture with a 3-image crossfading slideshow.
+const HERO_IMAGES = ['/assets/hero_img_1.jpg', '/assets/hero-img-2.jpg', '/assets/hero_img_3.jpg'];
+const HERO_SLIDES =
+  '<div class="drift-hero-slides" data-drift-hero>' +
+  HERO_IMAGES.map(
+    (src, i) =>
+      `<div class="drift-hero-slide${i === 0 ? ' is-active' : ''}"><img src="${src}" alt="Drift hero ${i + 1}" loading="eager" ${i === 0 ? 'fetchpriority="high"' : ''}></div>`
+  ).join('') +
+  '</div>';
+function withHeroSlides(html: string) {
+  const inner = html.indexOf('data-banner-image>');
+  if (inner < 0) return html;
+  const start = html.indexOf('<style data-shopify>', inner);
+  const endTag = '</picture>';
+  const end = html.indexOf(endTag, start);
+  if (start < 0 || end < 0) return html;
+  return html.slice(0, start) + HERO_SLIDES + html.slice(end + endTag.length);
+}
+// "Shop by category" grid: our own images, labels and links (in DOM order).
+const CATEGORIES = [
+  { label: 'MEN', img: '/assets/men.webp', href: '/collections/men' },
+  { label: 'WOMEN', img: '/assets/women.webp', href: '/collections/women' },
+  { label: 'BUNDLES', img: '/assets/bundles.webp', href: '/collections/bundles' },
+  { label: 'SHOP ALL', img: '/assets/shopall.webp', href: '/collections/shop-all' },
+];
+function withCategories(html: string) {
+  const start = html.indexOf('<section id="sectionMosaicGrid');
+  const end = html.indexOf('</section>', start);
+  if (start < 0 || end < 0) return html;
+  let sec = html.slice(start, end);
+  let from = 0;
+  for (const c of CATEGORIES) {
+    // image
+    const i0 = sec.indexOf('<img ', from);
+    if (i0 < 0) break;
+    const i1 = sec.indexOf('>', i0) + 1;
+    sec = sec.slice(0, i0) + `<img src="${c.img}" alt="${c.label}" loading="lazy" class="">` + sec.slice(i1);
+    // heading text
+    const h0 = sec.indexOf('class="mosaic__item__heading h2"', i0);
+    const t0 = sec.indexOf('>', h0) + 1;
+    const t1 = sec.indexOf('</h3>', t0);
+    sec = sec.slice(0, t0) + c.label + sec.slice(t1);
+    // link
+    const a0 = sec.indexOf('<a href="', t1);
+    const a1 = sec.indexOf('"', a0 + 9);
+    sec = sec.slice(0, a0 + 9) + c.href + sec.slice(a1);
+    from = a1;
+  }
+  return html.slice(0, start) + sec + html.slice(end);
+}
+
+// Centre the hero headline + button (Tone's default is bottom-left).
+const MAIN_HTML = withCategories(withHeroSlides(TONE_MAIN_HTML))
+  .replace('item--bottom-left text-left text-light', 'item--center text-center text-light')
+  .replace('<span class="text-highlight__break">Shop by scent</span>', '<span class="text-highlight__break">Shop by category</span>');
+
 const SCRIPTS = ['/js/tone-init.js', '/js/vendor.js', '/js/theme.js'];
 
 function loadScript(src: string) {
@@ -96,6 +152,19 @@ export function ToneHome() {
     return () => mo.disconnect();
   }, []);
 
+  // Hero slideshow: one image at a time, smooth crossfade every few seconds.
+  useEffect(() => {
+    const slides = Array.from(document.querySelectorAll<HTMLElement>('[data-drift-hero] .drift-hero-slide'));
+    if (slides.length < 2) return;
+    let current = 0;
+    const id = window.setInterval(() => {
+      slides[current].classList.remove('is-active');
+      current = (current + 1) % slides.length;
+      slides[current].classList.add('is-active');
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, []);
+
   // Load Tone's real theme scripts once, then fire DOMContentLoaded so they initialise.
   useEffect(() => {
     const w = window as unknown as { __toneBooted?: boolean };
@@ -114,7 +183,7 @@ export function ToneHome() {
     <div
       id="tone-root"
       suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: TONE_TOP_HTML + TONE_MAIN_HTML + '</main>' + TONE_FOOTER_HTML }}
+      dangerouslySetInnerHTML={{ __html: TONE_TOP_HTML + MAIN_HTML + '</main>' + TONE_FOOTER_HTML }}
     />
   );
 }

@@ -34,7 +34,7 @@ export function HydratingBodyWashSection() {
           {/* Left: Big Lifestyle Photo */}
           <div className="lg:col-span-6 relative rounded-2xl overflow-hidden min-h-[380px] sm:min-h-[480px] bg-neutral-100">
             <Image
-              src="https://tone.shop/cdn/shop/files/tone-bodywash-island-breeze-3.webp?crop=center&height=2400&v=1781043080&width=2400"
+              src="/assets/p1-u.webp"
               alt="Hydrating Body Wash Island Breeze"
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
