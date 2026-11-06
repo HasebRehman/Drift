@@ -361,7 +361,10 @@ function shopAllMain(html: string): string {
   return (
     `<main id="MainContent" class="main-content" data-main>` +
     `<div id="shopify-section-main-collection" class="shopify-section shopify-section--collection">` +
-    `<style>#${id}{--grid:repeat(4,minmax(0,1fr));--grid-tablet:repeat(3,minmax(0,1fr));--grid-mobile:repeat(2,minmax(0,1fr))}</style>` +
+    `<style>` +
+    `#${id}{padding-top:36px!important;--PT:36px;--grid:repeat(4,minmax(0,1fr));--grid-tablet:repeat(3,minmax(0,1fr));--grid-mobile:repeat(2,minmax(0,1fr))}` +
+    `@media (max-width:767px){#${id}{padding-top:20px!important;--PT:20px}}` +
+    `</style>` +
     `<section id="${id}" class="section-padding collection-section collection--filters-disabled collection--breadcrumbs-disabled collection collection-items collection-items--4" data-section-type="collection">` +
     `<div class="wrapper--full-padded">` +
     `<div class="collection__wrapper"><div class="collection__products">` +
