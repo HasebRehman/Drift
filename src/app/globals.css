@@ -1,26 +1,11 @@
-@import "tailwindcss";
+/* Tailwind utilities only (no preflight) so Tone's theme CSS is not overridden.
+   Tailwind is still used by CartDrawer / SearchModal. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Hero banner: fill the first screen (viewport minus announcement bar 31px + header 69px) */
+.banner-image .banner-image__inner.six-fifty-height,
+.banner-image .banner-image__inner.four-fifty-height-mobile {
+  --min-h: calc(100vh - 100px);
+  --min-h: calc(100svh - 100px);
 }
