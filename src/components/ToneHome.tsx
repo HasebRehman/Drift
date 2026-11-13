@@ -114,11 +114,12 @@ type CardCfg = {
   tplProductId: string; // template product id
   products: DriftProduct[];
   contentImage?: string; // replace the big feature image
+  contentHref?: string;
 };
 
 function buildProductCard(tpl: string, p: DriftProduct, cfg: CardCfg) {
   let c = tpl;
-  const url = `https://driftretail.com/products/${p.handle}`;
+  const url = `/products/${p.handle}`;
   c = c.split(cfg.tplHandle).join(url);
   c = c.split(`aria-label="${cfg.tplAria}"`).join(`aria-label="${p.title}"`);
   c = c.split(cfg.tplAlt).join(p.title);
@@ -174,6 +175,9 @@ function withProducts(html: string, cfg: CardCfg) {
   if (st < 0) return html;
   const end = html.indexOf('</section>', st);
   let sec = html.slice(st, end);
+  if (cfg.contentHref) {
+    sec = sec.replace(/(<a\b[^>]*class="featured-collection__content-link"[^>]*href=")[^"]*(")/, `$1${cfg.contentHref}$2`);
+  }
   const starts: number[] = [];
   for (let i = sec.indexOf(cfg.marker); i >= 0; i = sec.indexOf(cfg.marker, i + 1)) starts.push(i);
   if (starts.length < cfg.tplIndex + 2) return html;
@@ -262,6 +266,7 @@ function withDriftProducts(html: string) {
     tplAria: 'Island Breeze Body Wash',
     tplProductId: '10096384508201',
     products: WOMEN_PRODUCTS,
+    contentHref: '/collections/women',
   });
   return withProducts(html, {
     sectionId: 'section_products_with_image_ncxLcR',
@@ -275,6 +280,7 @@ function withDriftProducts(html: string) {
     tplProductId: '10096388604201',
     products: MEN_PRODUCTS,
     contentImage: '/assets/p3-u.webp',
+    contentHref: '/collections/men',
   });
 }
 
@@ -323,8 +329,10 @@ const TOP_HTML = withSideMenu(TONE_TOP_HTML).replace(
   'site-header site-header--fixed site-header--nav-left site-header--nav-light site-header--has-logo site-header--compress'
 );
 
-// Centre the hero headline + button (Tone's default is bottom-left).
+// Keep the hero artwork clear, with a centered call to action below the midpoint.
 const MAIN_HTML = withDriftProducts(withCategories(withHeroSlides(TONE_MAIN_HTML)))
+  .replaceAll('href="/collections"', 'href="/collections/shop-all"')
+  .replace(/<p\b[^>]*id="BannerHeading--heading_qgRVFb"[\s\S]*?<\/p>/, '')
   .replace('item--bottom-left text-left text-light', 'item--center text-center text-light')
   .replace('<span class="text-highlight__break">Shop by scent</span>', '<span class="text-highlight__break">Shop by category</span>');
 
@@ -451,7 +459,7 @@ const prices = (t: string) =>
   (t.replace(/,/g, '').match(/(?:\$|Rs\.?)\s*[\d.]+/gi) || []).map((x) => parseFloat(x.replace(/[^\d.]/g, '')));
 
 /** Whole Tone homepage: Tone's original markup + Tone's own theme scripts. */
-export function ToneHome({ page = 'home' }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles' }) {
+export function ToneHome({ page = 'home', children }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles'; children?: React.ReactNode }) {
   const { addItem, openCart } = useCart();
 
   // Keep our cart (Tone's Shopify cart API doesn't exist here): intercept before theme.js sees the event.
@@ -555,6 +563,8 @@ export function ToneHome({ page = 'home' }: { page?: 'home' | 'shop-all' | 'men'
   }, []);
 
   // One container so header, <main> and footer are siblings (Tone's footer-reveal script relies on that).
+  if (children) return <><div dangerouslySetInnerHTML={{ __html: TOP_HTML }} />{children}<div dangerouslySetInnerHTML={{ __html: TONE_FOOTER_HTML }} /></>;
+
   return (
     <div
       id="tone-root"

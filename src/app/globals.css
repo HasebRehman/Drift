@@ -10,6 +10,15 @@
   --min-h: calc(100svh - 100px);
 }
 
+/* Position the hero CTA independently of the removed heading. */
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .banner-image__text-container {
+  position: absolute;
+  top: 74%;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
 /* Header logo: always show a single image (Tone's breakpoints hide both at exactly 1024px) */
 #SiteHeader .logo__image_mobile { display: none !important; }
 #SiteHeader .logo__image { display: block !important; }
@@ -71,6 +80,18 @@
   transform: none !important;
   animation: none !important;
   scale: none !important;
+}
+
+/* Larger category names and shopping links on all four cards. */
+#sectionMosaicGrid--template--24202507026729__section-grid-0 .mosaic__item__heading {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+#sectionMosaicGrid--template--24202507026729__section-grid-0 .mosaic__item__btn {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 /* Shop by category: square cards so the square photos show in full */
