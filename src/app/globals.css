@@ -285,6 +285,15 @@
 }
 
 /* Product review wizard */
+/* Shared product-page layouts must survive client-side product refreshes. */
+#MainContent .drift-recently-viewed { padding: 30px max(20px, 3.5vw) 66px; background: #fff; color: #000; }
+#MainContent .drift-recently-viewed h2 { text-align: center; font-size: clamp(24px, 2.2vw, 36px); font-weight: 900; margin: 0 0 34px; }
+#MainContent .drift-recently-viewed__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+#MainContent .drift-recently-viewed__grid > .product-grid-item { width: 100%; min-width: 0; margin: 0; padding: 0; opacity: 1; visibility: visible; transform: none; }
+@media (max-width: 767px) {
+  #MainContent .drift-recently-viewed__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+}
+
 .drift-review-dialog { position: fixed; inset: 0; margin: auto; width: min(750px, calc(100% - 32px)); height: min(740px, calc(100dvh - 48px)); max-width: none; max-height: none; padding: 38px 50px; border: 0; border-radius: 0; background: #fff; color: #333; overflow-y: auto; }
 .drift-review-dialog[open] { animation: drift-review-open .25s ease-out both; }
 .drift-review-dialog::backdrop { background: rgb(0 0 0 / 50%); animation: drift-review-backdrop .25s ease-out both; }

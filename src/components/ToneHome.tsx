@@ -600,13 +600,6 @@ function productDetails(p: DriftProduct): string {
 function recentlyViewedSection(products: DriftProduct[], sectionId = 'recently-viewed', title = 'RECENTLY VIEWED'): string {
   if (!products.length) return '';
   return `<section class="shopify-section drift-recently-viewed" aria-labelledby="${sectionId}-heading">
-    <style>
-      .drift-recently-viewed { padding: 30px max(20px, 3.5vw) 66px; background: #fff; color: #000; }
-      .drift-recently-viewed h2 { text-align: center; font-size: clamp(24px, 2.2vw, 36px); font-weight: 900; margin: 0 0 34px; }
-      .drift-recently-viewed__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
-      .drift-recently-viewed__grid > .product-grid-item { width: 100%; min-width: 0; margin: 0; padding: 0; opacity: 1; visibility: visible; transform: none; }
-      @media (max-width: 767px) { .drift-recently-viewed__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; } }
-    </style>
     <h2 id="${sectionId}-heading">${title}</h2>
     <div class="drift-recently-viewed__grid">${collectionCards(TONE_MAIN_HTML, products).split('main-collection-shop-all').join(sectionId)}</div>
   </section>`;
