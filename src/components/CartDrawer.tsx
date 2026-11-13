@@ -6,8 +6,10 @@ import { X, Plus, Minus, Trash2, ChevronLeft, ChevronRight, Truck } from 'lucide
 import { useCart } from '@/context/CartContext';
 import { SHOP_ALL } from '@/data/driftProducts';
 import { parsePrice } from '@/lib/prices';
+import { useRouter } from 'next/navigation';
 
 export function CartDrawer() {
+  const router = useRouter();
   const {
     items,
     isOpen,
@@ -111,7 +113,7 @@ export function CartDrawer() {
               <input aria-label="Discount code" placeholder="Discount code" value={discount} onChange={event => setDiscount(event.target.value)} /><button type="submit">Apply</button>
             </form>
             {message && <p className="drift-cart-message" role="status">{message}</p>}
-            <button className="drift-cart-checkout-button" disabled={!items.length} onClick={() => setMessage('Checkout is not connected yet. Your items are saved in this browser.')}>Checkout &bull; {money(subtotal)}</button>
+            <button className="drift-cart-checkout-button" disabled={!items.length} onClick={() => { closeCart(); router.push('/checkout'); }}>Checkout &bull; {money(subtotal)}</button>
           </footer>
         </div>
       </div>

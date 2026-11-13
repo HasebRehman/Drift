@@ -19,6 +19,7 @@ export interface CartItem {
 }
 
 interface CartContextType {
+  isReady: boolean;
   items: CartItem[];
   isOpen: boolean;
   openCart: () => void;
@@ -128,6 +129,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   return (
     <CartContext.Provider
       value={{
+        isReady: mounted,
         items,
         isOpen,
         openCart,

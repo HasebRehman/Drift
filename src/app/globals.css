@@ -254,11 +254,30 @@
   overflow: hidden;
 }
 
-/* Top announcement bar: always show its text, even before Tone's ticker script starts it */
-.announcement__scale.ticker--unloaded {
-  opacity: 1 !important;
-  position: static !important;
-  width: auto !important;
+/* A continuously filled marquee, including before theme scripts load. */
+#tone-root { padding-top: calc(var(--drift-announcement-height, 28px) + var(--drift-header-height, 60px)); }
+#tone-root .announcement-bar-static { position: fixed !important; inset: 0 0 auto; width: 100%; z-index: 9002; }
+#tone-root .shopify-section-header { position: fixed !important; top: var(--drift-announcement-height, 28px) !important; left: 0; right: 0; width: 100%; height: auto !important; z-index: 9001; transform: none !important; animation: none !important; }
+#tone-root #SiteHeader { position: relative !important; top: 0 !important; height: auto !important; transform: none !important; animation: none !important; background: #fff; }
+.drift-announcement { overflow: hidden; background: #000; color: #fff; padding-block: 5px; }
+.drift-announcement__track { display: flex; width: max-content; animation: drift-marquee var(--drift-marquee-duration, 36s) linear infinite; }
+.drift-announcement__group { display: flex; align-items: center; justify-content: space-around; flex: 0 0 auto; min-width: 100vw; }
+.drift-announcement__group > span { flex-shrink: 0; white-space: nowrap; padding-inline: 36px; font-size: 12px; line-height: 18px; }
+.drift-announcement__group a { color: inherit; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.drift-announcement:focus-within .drift-announcement__track { animation-play-state: paused; }
+@keyframes drift-marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .drift-announcement__track { animation: none; }
+  .drift-announcement__group { min-width: 0; }
+}
+/* Main content slides over the footer; its size can change after fonts/images load. */
+@media (min-width: 768px) {
+  #tone-root > .drift-footer-cover { position: relative; z-index: 1; background: #fff; }
+  #tone-root > .drift-footer-reveal {
+    position: sticky;
+    bottom: min(0px, calc(100svh - var(--drift-footer-height, 100svh)));
+    z-index: 0;
+  }
 }
 .announcement-bar-static,
 .announcement {
@@ -386,18 +405,21 @@ html { scrollbar-gutter: stable; }
   .drift-cart-item { animation: none; }
 }
 
-/* The theme already compensates for the scrollbar when the navigation opens.
-   Avoid a second reserved gutter along the right edge. */
-html:has(#nav-drawer:not(.cv-h)),
-html:has(body.js-drawer-open) { scrollbar-gutter: auto; }
-/* Keep the separate shopping cart fully hidden while navigation is open. */
+/* Navigation has its own animation and scroll lock, independent of theme boot. */
+html.drift-nav-open { scrollbar-gutter: auto; }
+/* Search already locks page scrolling. Remove both the reserved gutter and
+   the legacy theme's extra scrollbar compensation until its close finishes. */
+html:has(body.search-opened) { scrollbar-gutter: auto; --scrollbar-width: 0px !important; }
+body.search-opened { padding-right: 0 !important; margin-right: 0 !important; }
+.drift-nav-panel { position: fixed; inset: 0 auto 0 0; width: min(450px, 100%); z-index: 11001; overflow: auto; overscroll-behavior: contain; background: #fff; color: #111; transform: translateX(-100%); visibility: hidden; transition: transform 360ms cubic-bezier(.22, 1, .36, 1), visibility 0s linear 360ms; }
+.drift-nav-panel.is-open { transform: translateX(0); visibility: visible; transition-delay: 0s; }
+.drift-nav-backdrop { position: fixed; inset: 0; z-index: 11000; background: rgb(0 0 0 / 20%); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 360ms ease, visibility 0s linear 360ms; }
+.drift-nav-backdrop.is-open { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.drift-nav-panel .drawer__header { padding: 20px; }
+.drift-nav-panel .drawer__logo-image { display: block; width: 170px; height: auto; }
+.drift-nav-panel .mobile-navlink { color: #111; }
 .drift-cart-drawer:not(.is-open) { overflow: clip; }
-html:has(#nav-drawer:not(.cv-h)) .drift-cart-drawer:not(.is-open) { display: none; }
-
-/* Navigation fills the viewport; do not leave the scroll-lock spacer exposed. */
-html:has(#nav-drawer:not(.cv-h)) { overflow: hidden !important; scrollbar-gutter: auto !important; }
-body:has(#nav-drawer:not(.cv-h)) { margin-right: 0 !important; padding-right: 0 !important; width: 100% !important; max-width: 100% !important; }
-body:has(#nav-drawer:not(.cv-h)) .drawer__overlay { right: 0; width: 100vw; }
+@media (prefers-reduced-motion: reduce) { .drift-nav-panel, .drift-nav-backdrop { transition: none; } }
 
 /* Reference-style cart drawer. */
 .drift-cart-position { position: fixed; inset: 0 0 0 auto; width: min(545px, 100%); }
@@ -504,3 +526,85 @@ body:has(#nav-drawer:not(.cv-h)) .drawer__overlay { right: 0; width: 100vw; }
 .drift-cart-design .drift-cart-reward-point > svg { width: 17px; height: 17px; }
 .drift-cart-design .drift-cart-reward-point > span { top: 29px; font-size: 11px; }
 .drift-cart-design .drift-cart-recommendations > h3 { font-size: 19px; font-weight: 600 !important; line-height: 1.3 !important; letter-spacing: 0 !important; margin-bottom: 24px; }
+
+#SiteFooter .footer-block--about { gap: 0; }
+#SiteFooter .footer-block--about .footer-title { margin: 0 0 18px; }
+#SiteFooter .drift-footer-about-copy { margin: 0; color: rgba(255,255,255,.8); font-size: 14px; line-height: 1.8; font-weight: 400; }
+@media (max-width: 767px) { #SiteFooter .footer-block--about { margin-top: 28px; } }
+
+/* Two-line campaign heading above the homepage CTA. */
+#tone-root .drift-products-carousel { position: relative; width: 100%; margin: 0; }
+#tone-root .drift-products-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 24px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  scroll-padding: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.drift-products-track::-webkit-scrollbar { display: none; }
+#tone-root .drift-products-track::after { content: none; }
+#tone-root .drift-products-track > .product-grid-item { flex: 0 0 calc((100% - 72px) / 4); width: calc((100% - 72px) / 4); min-width: 0; margin: 0; padding: 0; scroll-snap-align: start; }
+#tone-root .drift-products-arrow { position: absolute; top: var(--products-arrow-top, 40%); transform: translateY(-50%); z-index: 3; display: grid; place-items: center; width: 46px; height: 46px; padding: 12px; border: 0; border-radius: 50%; background: #fff; color: #111; box-shadow: 0 1px 6px rgb(0 0 0 / 10%); cursor: pointer; }
+#tone-root .drift-products-arrow[hidden] { display: none; }
+.drift-products-arrow--prev { left: 16px; }
+.drift-products-arrow--next { right: 16px; }
+.drift-products-arrow svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.3; }
+#tone-root .drift-home-shop-all { display: flex; justify-content: center; padding: 36px max(20px, 3.5vw) 60px; background: #fff; }
+#tone-root .drift-home-shop-all > a { display: inline-flex; align-items: center; justify-content: center; width: 272px; max-width: 100%; min-height: 48px; padding: 12px 24px; box-sizing: border-box; background: #000; color: #fff; font-size: 14px; font-weight: 600; letter-spacing: .04em; text-align: center; }
+#tone-root .drift-home-shop-all > a:hover { background: #333; }
+@media (max-width: 1023px) { #tone-root .drift-products-track > .product-grid-item { flex-basis: calc((100% - 24px) / 2); width: calc((100% - 24px) / 2); } }
+@media (max-width: 767px) { #tone-root .drift-products-track { gap: 12px; } #tone-root .drift-products-track > .product-grid-item { flex-basis: calc((100% - 12px) / 2); width: calc((100% - 12px) / 2); } }
+.search-popdown__body [data-drift-search] .drift-search-results {
+  position: relative;
+  width: min(680px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 20px 26px;
+  box-sizing: border-box;
+  max-height: min(60svh, calc(100svh - 180px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 12px 24px rgb(0 0 0 / 10%);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity .2s ease, visibility .2s;
+}
+.search-popdown__body:has([data-drift-search]) { color: #111; }
+search-popdown details.is-open .search-popdown__body [data-drift-search] .drift-search-results { visibility: visible; opacity: 1; }
+.drift-search-results a { color: #111; }
+.drift-search-results .predictive-search__heading { color: #111; }
+.drift-search-categories { display: flex; flex-wrap: wrap; gap: 12px 26px; padding-top: 16px; }
+.drift-search-product { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid #ddd; }
+.drift-search-product img { width: 64px; height: 64px; object-fit: cover; flex-shrink: 0; }
+.drift-search-product > span:last-child { margin-left: auto; white-space: nowrap; }
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .drift-hero-slides::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgb(0 0 0 / 20%);
+  pointer-events: none;
+}
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .banner-image__text-container { top: 72%; z-index: 2; padding-inline: 20px; box-sizing: border-box; }
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .drift-hero-heading {
+  margin: 0 0 26px;
+  color: #fff;
+  font-family: var(--FONT-STACK-HEADING, Inter, sans-serif);
+  font-size: clamp(32px, 4.2vw, 64px);
+  font-weight: 900;
+  line-height: 1.08 !important;
+  letter-spacing: -.035em !important;
+  text-align: center;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 45%);
+}
+.drift-hero-heading > span { display: block; }
+@media (max-width: 767px) {
+  #SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .drift-hero-heading { font-size: clamp(26px, 7.5vw, 42px); margin-bottom: 22px; }
+}

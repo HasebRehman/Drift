@@ -9,14 +9,22 @@ import { TONE_TOP_HTML, TONE_FOOTER_HTML } from './ToneChromeHtml';
 import { mountInstagramFeed } from '@/components/instagramFeed';
 import { mountProductReviews } from '@/components/productReviews';
 import { parsePrice } from '@/lib/prices';
+import { withStoreSearch, mountStoreSearch } from './storeSearch';
+import { withStoreAnnouncement, withStoreFooter, mountStoreChrome } from './storeChrome';
+import { withHomeProductsCarousel, mountHomeProductsCarousel } from './homeProductsCarousel';
+import { withNavigationDrawer, mountNavigationDrawer } from './navigationDrawer';
 
 // Hero: replace Tone's single banner picture with a 3-image crossfading slideshow.
-const HERO_IMAGES = ['/assets/hero_img_1.jpg', '/assets/hero-img-2.jpg', '/assets/hero_img_3.jpg'];
+const HERO_IMAGES = [
+  { src: '/assets/hero_img_1.jpg', alt: 'DRIFT fragrance lifestyle collection' },
+  { src: '/assets/hero-img-2.jpg', alt: 'IT Girl and Baddie perfumed mists with berries, jasmine and vanilla' },
+  { src: '/assets/hero_img_3.jpg', alt: 'Hero, Muse, Rebel and Ignite perfumed mists' },
+];
 const HERO_SLIDES =
   '<div class="drift-hero-slides" data-drift-hero>' +
   HERO_IMAGES.map(
-    (src, i) =>
-      `<div class="drift-hero-slide${i === 0 ? ' is-active' : ''}"><img src="${src}" alt="Drift hero ${i + 1}" loading="eager" ${i === 0 ? 'fetchpriority="high"' : ''}></div>`
+    (slide, i) =>
+      `<div class="drift-hero-slide${i === 0 ? ' is-active' : ''}"><img src="${slide.src}" alt="${slide.alt}" loading="eager" ${i === 0 ? 'fetchpriority="high"' : ''}></div>`
   ).join('') +
   '</div>';
 function withHeroSlides(html: string) {
@@ -31,10 +39,10 @@ function withHeroSlides(html: string) {
 }
 // "Shop by category" grid: our own images, labels and links (in DOM order).
 const CATEGORIES = [
-  { label: 'MEN', img: '/assets/men.webp', href: '/collections/men' },
-  { label: 'WOMEN', img: '/assets/women.webp', href: '/collections/women' },
-  { label: 'BUNDLES', img: '/assets/bundles.webp', href: '/collections/bundles' },
-  { label: 'SHOP ALL', img: '/assets/shopall.webp', href: '/collections/shop-all' },
+  { label: 'MEN', img: '/assets/category-men-v2.webp', href: '/collections/men' },
+  { label: 'WOMEN', img: '/assets/category-women-v2.webp', href: '/collections/women' },
+  { label: 'BUNDLES', img: '/assets/category-bundles-v2.webp', href: '/collections/bundles' },
+  { label: 'SHOP ALL', img: '/assets/category-shop-all-v2.webp', href: '/collections/shop-all' },
 ];
 function withCategories(html: string) {
   const start = html.indexOf('<section id="sectionMosaicGrid');
@@ -118,6 +126,7 @@ type CardCfg = {
   tplProductId: string; // template product id
   products: DriftProduct[];
   contentImage?: string; // replace the big feature image
+  contentAlt?: string;
   contentHref?: string;
 };
 
@@ -205,7 +214,7 @@ function withProducts(html: string, cfg: CardCfg) {
     if (ci >= 0 && i0 >= 0) {
       sec =
         sec.slice(0, i0) +
-        `<img src="${cfg.contentImage}" alt="Drift" width="2000" height="2000" loading="eager" class="object-cover" style="opacity: 1 !important; visibility: visible !important;">` +
+        `<img src="${cfg.contentImage}" alt="${esc(cfg.contentAlt || 'Drift')}" width="2000" height="2000" loading="eager" class="object-cover" style="opacity: 1 !important; visibility: visible !important;">` +
         sec.slice(i1);
     }
   }
@@ -270,6 +279,8 @@ function withDriftProducts(html: string) {
     tplAria: 'Island Breeze Body Wash',
     tplProductId: '10096384508201',
     products: WOMEN_PRODUCTS,
+    contentImage: '/assets/women-lifestyle-v2.webp',
+    contentAlt: 'Woman holding a magenta DRIFT perfumed mist on a sunlit garden terrace',
     contentHref: '/collections/women',
   });
   return withProducts(html, {
@@ -283,7 +294,8 @@ function withDriftProducts(html: string) {
     tplAria: 'Island Breeze Deodorant',
     tplProductId: '10096388604201',
     products: MEN_PRODUCTS,
-    contentImage: '/assets/p3-u.webp',
+    contentImage: '/assets/men-lifestyle-v3.webp',
+    contentAlt: 'Man holding a purple Ignite perfumed mist on an urban rooftop at dusk',
     contentHref: '/collections/men',
   });
 }
@@ -328,7 +340,7 @@ function withSideMenu(html: string) {
   return out;
 }
 // Final header state baked into the server HTML (hamburger layout) so nothing flashes on page load.
-const TOP_HTML = withSideMenu(TONE_TOP_HTML).replace(
+const TOP_HTML = withNavigationDrawer(withStoreAnnouncement(withStoreSearch(withSideMenu(TONE_TOP_HTML)))).replace(
   'site-header site-header--fixed site-header--nav-left site-header--nav-light site-header--has-logo',
   'site-header site-header--fixed site-header--nav-left site-header--nav-light site-header--has-logo site-header--compress'
 );
@@ -353,10 +365,10 @@ const HOME_INSTAGRAM =
     <p class="drift-instagram__empty" role="status">Loading our latest Instagram moments...</p>
   </section>`;
 
-// Keep the hero artwork clear, with a centered call to action below the midpoint.
-const MAIN_HTML = withDriftProducts(withCategories(withHeroSlides(TONE_MAIN_HTML)))
+// Two-line DRIFT campaign heading above the homepage shopping CTA.
+const MAIN_HTML = withHomeProductsCarousel(withDriftProducts(withCategories(withHeroSlides(TONE_MAIN_HTML))))
   .replaceAll('href="/collections"', 'href="/collections/shop-all"')
-  .replace(/<p\b[^>]*id="BannerHeading--heading_qgRVFb"[\s\S]*?<\/p>/, '')
+  .replace(/<p\b[^>]*id="BannerHeading--heading_qgRVFb"[\s\S]*?<\/p>/, '<h1 class="drift-hero-heading">FIND YOUR SCENT<br />OWN YOUR FLOW</h1>')
   .replace('item--bottom-left text-left text-light', 'item--center text-center text-light')
   .replace('<span class="text-highlight__break">Shop by scent</span>', '<span class="text-highlight__break">Shop by category</span>')
   .replace('<div id="shopify-section-template--24202507026729__section_newsletter_YdgKe3"', HOME_BRAND_STORY + '<div id="shopify-section-template--24202507026729__section_newsletter_YdgKe3"');
@@ -483,7 +495,9 @@ const PRODUCT_BODY_SCRIPT =
 const pImg = (f: string, w: number) => `${CDN}${f}${f.includes('?') ? '&' : '?'}width=${w}`;
 const priceNum = (s: string) => parseFloat(s.replace(/rs\.?/i, '').replace(/[^\d.]/g, '')) || 0;
 const fmtRs = (n: number) => 'Rs.' + Math.round(n).toLocaleString('en-US');
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
 
 const STAR_OFF = '<span class="jdgm-star jdgm--off"></span>'.repeat(5);
 
@@ -670,6 +684,7 @@ const ABOUT_MAIN = `<main id="MainContent" class="main-content" data-main>
   </section></div>` + trustRow();
 
 const SCRIPTS = ['/js/tone-init.js', '/js/vendor.js', '/js/theme.js'];
+const FOOTER_HTML = withStoreFooter(TONE_FOOTER_HTML);
 
 function loadScript(src: string) {
   return new Promise<void>((resolve) => {
@@ -690,6 +705,13 @@ const prices = (t: string) =>
 /** Whole Tone homepage: Tone's original markup + Tone's own theme scripts. */
 export function ToneHome({ page = 'home', children, product }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles' | 'product' | 'about'; children?: React.ReactNode; product?: DriftProduct }) {
   const { addItem, openCart } = useCart();
+
+  useEffect(() => mountStoreChrome(), [page, product, children]);
+  useEffect(() => mountNavigationDrawer(), [page, product]);
+
+  useEffect(() => {
+    if (page === 'home') return mountHomeProductsCarousel();
+  }, [page]);
 
   useEffect(() => {
     if (page !== 'home') return;
@@ -754,6 +776,8 @@ export function ToneHome({ page = 'home', children, product }: { page?: 'home' |
     } catch { /* Storage can be disabled in the browser. */ }
   }, [page, product]);
 
+
+  useEffect(() => mountStoreSearch(), [page]);
 
   // Keep our cart (Tone's Shopify cart API doesn't exist here): intercept before theme.js sees the event.
   useEffect(() => {
@@ -919,7 +943,7 @@ export function ToneHome({ page = 'home', children, product }: { page?: 'home' |
       <div
         id="tone-root"
         suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: PRODUCT_BODY_SCRIPT + TOP_HTML + productMain(product) + '</main>' + TONE_FOOTER_HTML }}
+        dangerouslySetInnerHTML={{ __html: PRODUCT_BODY_SCRIPT + TOP_HTML + productMain(product) + '</main>' + FOOTER_HTML }}
       />
     );
   }
@@ -928,7 +952,7 @@ export function ToneHome({ page = 'home', children, product }: { page?: 'home' |
     <div
       id="tone-root"
       suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: (page === 'home' ? '' : COLLECTION_BODY_SCRIPT) + TOP_HTML + (page === 'about' ? ABOUT_MAIN : page === 'shop-all' ? SHOP_ALL_MAIN : page === 'men' ? MEN_MAIN : page === 'women' ? WOMEN_MAIN : page === 'bundles' ? BUNDLES_MAIN : MAIN_HTML + HOME_INSTAGRAM) + '</main>' + TONE_FOOTER_HTML }}
+      dangerouslySetInnerHTML={{ __html: (page === 'home' ? '' : COLLECTION_BODY_SCRIPT) + TOP_HTML + (page === 'about' ? ABOUT_MAIN : page === 'shop-all' ? SHOP_ALL_MAIN : page === 'men' ? MEN_MAIN : page === 'women' ? WOMEN_MAIN : page === 'bundles' ? BUNDLES_MAIN : MAIN_HTML + HOME_INSTAGRAM) + '</main>' + FOOTER_HTML }}
     />
   );
 }

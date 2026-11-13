@@ -1,0 +1,7 @@
+# Women’s homepage lifestyle image
+
+Asset: `public/assets/women-lifestyle-v2.webp`
+
+Created with the built-in image generation tool, referenced from `public/assets/women.webp`, then exported as quality-90 WebP. Used beside the homepage women's fragrance products.
+
+Final prompt: Use case: photorealistic-natural. Create a new square 1:1 premium DRIFT fragrance lifestyle campaign photograph for the large image beside women's perfumed mist products on a homepage. Input reference is for the magenta DRIFT spray bottle design and summery atmosphere only, not an identity-preservation request. Subject: a fictional adult South Asian woman in her mid twenties, long chestnut hair, natural makeup, wearing a relaxed ivory linen shirt. She holds the reference's magenta cylindrical DRIFT perfumed mist bottle upright next to her collarbone and smiles softly, looking slightly away from camera. The entire bottle and her face must be fully in frame, realistic hand anatomy. Bottle is a modest 150ml hand-held size, magenta translucent cap, white vertical DRIFT lettering like reference. Medium close-up from chest upward, woman slightly right of center, bottle central and prominent, warm sunlit garden terrace with soft olive greenery and subtle turquoise pool bokeh. Authentic skin texture, professional editorial beauty photography, elegant and aspirational, soft afternoon sunlight. Full bleed image, no frame, no added text, no watermark. Compose with generous safe margins to fit square and modest portrait crops, no cropped head or bottle, no collage.

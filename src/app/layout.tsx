@@ -3,11 +3,11 @@ import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
-  title: 'TONE | New Era of Personal Care - Deodorant, Lotion & Lip Balm',
+  title: 'DRIFT | Own Your Flow — Perfumed Mists',
   description:
-    'TONE, founded by AMP creators Kai Cenat, Duke Dennis, Fanum, Agent, Davis, and Chris, offers personal care products crafted with natural ingredients and iconic scents.',
+    'Discover DRIFT perfumed mists for him and her. Distinctive scents, thoughtful design, and fragrance for every day.',
   icons: {
-    icon: 'https://tone.shop/cdn/shop/files/Group_1000004713.png?v=1740066921&width=32',
+    icon: '/assets/drift_black.svg',
   },
 };
 
