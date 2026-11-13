@@ -440,6 +440,189 @@ const BUNDLES_MAIN = collectionMain(
 );
 
 
+// ---------------------------------------------------------------------------
+// /products/[handle]: Tone's single-product template (markup + classes copied from
+// tone.shop product pages) filled with the DRIFT product's own data.
+// ---------------------------------------------------------------------------
+const PRODUCT_BODY_SCRIPT =
+  '<script>document.body.className=document.body.className.replace("template-index","template-product")</script>';
+const pImg = (f: string, w: number) => `${CDN}${f}${f.includes('?') ? '&' : '?'}width=${w}`;
+const priceNum = (s: string) => parseFloat(s.replace(/rs\.?/i, '').replace(/[^\d.]/g, '')) || 0;
+const fmtRs = (n: number) => 'Rs.' + Math.round(n).toLocaleString('en-US');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+const STAR_OFF = '<span class="jdgm-star jdgm--off"></span>'.repeat(5);
+
+function productGallery(p: DriftProduct): string {
+  const slides = p.images
+    .map(
+      (f, i) =>
+        `<div id="FeaturedMedia-drift-${i}" class="product-single__media-slide${i === 0 ? ' is-selected' : ''}" data-product-slide data-id="${i}" data-aspectratio="1.0" data-media-id="drift-${i}" data-type="image" data-product-single-media-wrapper>` +
+        `<div class="product-single__media product-single__media--image"><div class="product-single__media--image-height" style="padding-top: 100.0%;"></div>` +
+        `<figure class="lazy-image lazy-image--cover"><img src="${pImg(f, 1400)}" alt="${esc(p.title)}" width="1400" height="1400" loading="${i === 0 ? 'eager' : 'lazy'}" class="img-object-cover" data-product-image data-image-id="${i}"></figure></div></div>`
+    )
+    .join('');
+  const thumbs = p.images
+    .map(
+      (f, i) =>
+        `<div class="product-single__thumbnail product-gallery-thumbnail${i === 0 ? ' active is-nav-selected is-selected' : ''}" data-id="${i}" data-thumbnail-id="drift-${i}" data-order="${i}">` +
+        `<a href="#" class="product-single__thumbnail-link" aria-label="${esc(p.title)}"><figure class="lazy-image lazy-image--cover"><img src="${pImg(f, 178)}" alt="${esc(p.title)}" width="178" height="178" loading="eager" class="product-single__thumbnail-img img-object-cover"></figure></a></div>`
+    )
+    .join('');
+  return (
+    `<div class="product-single__gallery product-single__gallery--equal product-gallery-mobile-grid" id="ProductPhoto--drift" data-gallery="true" data-autoplay-video="false" data-product-single-media-group data-mobile-gallery-init="1">` +
+    `<div class="product-gallery-mobile-grid-container">` +
+    `<div class="product-single__media-slider product-gallery-viewer-mobile flickity-disabled-mobile" data-product-single-media-slider>${slides}</div>` +
+    (p.images.length > 1
+      ? `<div class="product-gallery-mobile-arrows"><button class="product-gallery-mobile-arrow product-gallery-mobile-arrow--prev" type="button" aria-label="Previous image"><svg width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7.5 1 1.5 7l6 6"/></svg></button><button class="product-gallery-mobile-arrow product-gallery-mobile-arrow--next" type="button" aria-label="Next image"><svg width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m1.5 1 6 6-6 6"/></svg></button></div>` +
+        `<div class="product-single__thumbnails product-gallery-thumbnails-mobile flickity-disabled-mobile" id="ProductThumbs" data-product-single-media-thumbs>${thumbs}</div>`
+      : '') +
+    `</div></div>`
+  );
+}
+
+function scentSelector(p: DriftProduct): string {
+  const singles = SHOP_ALL.filter((x) => x.images.length > 1);
+  if (!singles.some((x) => x.id === p.id)) return '';
+  const items = singles
+    .map((x) => {
+      const label = x.title.split('—')[0].trim();
+      return (
+        `<div class="item${x.id === p.id ? ' active' : ''}"><a href="/products/${x.handle}">` +
+        `<img class="product-selector-img" src="${pImg(x.images[0], 300)}" alt="${esc(x.title)}"><h5>${esc(label)}</h5></a></div>`
+      );
+    })
+    .join('');
+  return `<div class="product__block" style="--PBB:0px;"><div class="bundle-selector"><h4>Select Your Scent</h4><div class="bundle-selector-items rollerball">${items}</div></div></div>`;
+}
+
+function accordion(id: string, title: string, content: string, pbb: number): string {
+  if (!content) return '';
+  const cid = `ProductAccordion--${id}`;
+  return (
+    `<div class="product__block product__accordions" style="--PBB:${pbb}px;" id="Block--${id}"><div class="product__accordion">` +
+    `<button class="product__accordion__title font-heading" aria-controls="${cid}" data-collapsible-trigger>${title}` +
+    `<svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-toggle-plus" viewBox="0 0 192 192"><path d="M30 96h132M96 30v132" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>` +
+    `<svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-toggle-minus" viewBox="0 0 192 192"><path d="M30 96h132" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
+    `<div class="product__accordion__content" id="${cid}" data-collapsible-container><div class="product__accordion__inner rte" data-collapsible-content>${content}</div></div>` +
+    `</div></div>`
+  );
+}
+
+function productDetails(p: DriftProduct): string {
+  const price = priceNum(p.price);
+  const compare = priceNum(p.compare);
+  const onSale = compare > price;
+  const cartData = encodeURIComponent(
+    JSON.stringify({
+      id: p.id,
+      handle: p.handle,
+      title: p.title,
+      price,
+      compare: onSale ? compare : 0,
+      image: pImg(p.images[0], 400),
+      scent: p.title.split('—')[0].trim(),
+      notes: p.title.split('—')[1]?.trim() || '',
+    })
+  );
+  const priceHtml =
+    `<div class="product__price" data-price-wrapper style="--adjust-body-desktop: calc(var(--FONT-ADJUST-BODY) * 0.85);"><span data-product-price class="product__price--regular" data-variant-id="${p.id}">${p.price}</span>` +
+    `<s data-compare-price class="product__price--compare${onSale ? '' : ' hidden'}" data-variant-id="${p.id}">${onSale ? p.compare : ''}</s>` +
+    `<span data-price-off class="product__price--off${onSale ? '' : ' hidden'}"><span data-price-off-type>Sale</span><em>•</em> Save <span data-price-off-amount>${onSale ? fmtRs(compare - price) : ''}</span></span></div>`;
+  const atc = (fixed: boolean) =>
+    `<div class="product__submit__item ${fixed ? 'product__submit__item--fixed ' : ''}product__submit__item--atc"><button type="submit" name="add" class="btn btn--black btn--solid btn--large btn--submit product__submit__add" data-add-to-cart><span data-add-to-cart-text>Add to Cart</span><em class="loader loader--line"><em class="loader-indeterminate"></em></em></button></div>`;
+  return (
+    `<div class="product-single__details" data-collapsible-single><div class="form__wrapper is-sticky" data-product-info>` +
+    `<div class="product__block product__title-and-price"><h1 class="product__title" style="--adjust-heading: calc(var(--FONT-ADJUST-HEADING) * 0.8);">${esc(p.title)}</h1></div>` +
+    `<div class="product__block product__price-and-badge" style="--PBB:20px;"><div class="product__price-wrapper">${priceHtml}</div></div>` +
+    `<div class="product__block standard__app"><div class="shopify-block shopify-app-block"><div class="jdgm-widget jdgm-preview-badge jdgm-preview-badge--with-link jdgm--done-setup" style="display: none;"><div class="jdgm-prev-badge" data-average-rating="0.00" data-number-of-reviews="0"><span class="jdgm-prev-badge__stars" data-score="0.00" tabindex="0" aria-label="See all reviews" role="button">${STAR_OFF}</span><span class="jdgm-prev-badge__text">No reviews</span></div></div></div></div>` +
+    `<div class="product__block product__description rte" style="--PBB:20px;">${p.description || ''}</div>` +
+    `<div class="product__block" style="--PBB:0px;"><div class="product__price-wrapper freshwater">${priceHtml}</div></div>` +
+    `<div class="product__block product__form__wrapper variant__labels--hide" style="--PBB:16px;" data-form-wrapper>` +
+    `<form method="post" action="/cart/add" id="AddToCartForm--drift" accept-charset="UTF-8" class="product__form" enctype="multipart/form-data" data-product-form data-drift-product="${cartData}">` +
+    `<input type="hidden" name="form_type" value="product"><input type="hidden" name="id" value="${p.id}" data-product-select><input type="hidden" name="quantity" value="1">` +
+    `<div class="product__submit__holder product__submit__holder--notification"><div class="product__submit__buttons">${atc(false)}` +
+    `<div class="addToCart__wrapper--fixed">${atc(true)}</div></div></div>` +
+    `<div data-cart-errors-container role="alert" class="product__form__errors"></div>` +
+    `<input type="hidden" name="product-id" value="${p.id}"></form></div>` +
+    scentSelector(p) +
+    accordion('details', 'DETAILS', p.formulation || '', 20) +
+    accordion('how-to-use', 'HOW TO USE', p.howToUse || '', 40) +
+    `</div></div>`
+  );
+}
+
+function recentlyViewedSection(products: DriftProduct[], sectionId = 'recently-viewed', title = 'RECENTLY VIEWED'): string {
+  if (!products.length) return '';
+  return `<section class="shopify-section drift-recently-viewed" aria-labelledby="${sectionId}-heading">
+    <style>
+      .drift-recently-viewed { padding: 30px max(20px, 3.5vw) 66px; background: #fff; color: #000; }
+      .drift-recently-viewed h2 { text-align: center; font-size: clamp(24px, 2.2vw, 36px); font-weight: 900; margin: 0 0 34px; }
+      .drift-recently-viewed__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+      .drift-recently-viewed__grid > .product-grid-item { width: 100%; min-width: 0; margin: 0; padding: 0; opacity: 1; visibility: visible; transform: none; }
+      @media (max-width: 767px) { .drift-recently-viewed__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; } }
+    </style>
+    <h2 id="${sectionId}-heading">${title}</h2>
+    <div class="drift-recently-viewed__grid">${collectionCards(TONE_MAIN_HTML, products).split('main-collection-shop-all').join(sectionId)}</div>
+  </section>`;
+}
+
+function randomRelatedProducts(excludeId: string): DriftProduct[] {
+  const products = SHOP_ALL.filter((product) => product.id !== excludeId);
+  for (let i = products.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [products[i], products[j]] = [products[j], products[i]];
+  }
+  return products.slice(0, 4);
+}
+
+const PRODUCT_ABOUT =
+  `<div id="shopify-section-product-about" class="shopify-section text"><style>#Text--product-about { --PT: 100px; --PB: 20px; } #Text--heading-product-about.text__heading { --adjust-heading: calc(var(--FONT-ADJUST-HEADING) * 1.3); } #Text--text-product-about.text__content { --adjust-body: calc(var(--FONT-ADJUST-BODY) * 1.2); }</style><section id="Text--product-about" class="section-padding text-section text-dark" data-section-id="product-about" data-section-type="text">` +
+  `<div class="wrapper--narrow text-center"><div class="text"><p id="Text--heading-product-about" class="text__heading h2"><span class="text-highlight__break">Fragrance By DRIFT</span></p>` +
+  `<div id="Text--text-product-about" class="text__content"><p>DRIFT makes perfumed mists for everyday wear. Each scent stands on its own and is built to layer with the others.</p></div></div></div></section></div>`;
+
+const PRODUCT_REVIEWS =
+  `<section id="shopify-section-product-reviews" class="shopify-section"><style>#App--product-reviews { --PT: 60px; --PB: 60px; } #judgeme_product_reviews .jm-review-widget { display: block; padding: 48px 0; } #judgeme_product_reviews .jm-review-widget__header-and-body { display: flex; flex-direction: column; gap: 12px; } #judgeme_product_reviews .jm-review-widget__header { display: flex; flex-direction: column; gap: 24px; } #judgeme_product_reviews .jm-stack { display: flex; flex-direction: column; } #judgeme_product_reviews .jm-cluster { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; } #judgeme_product_reviews .jm-text { margin: 0; } #judgeme_product_reviews .jm-review-widget-minimal-header__title { font-size: 20px; font-weight: 400; } #judgeme_product_reviews .jm-no-reviews-state { display: flex; justify-content: center; max-width: 490px; margin: 0 auto; text-align: center; } #judgeme_product_reviews .jm-no-reviews-state > .jm-stack { align-items: center; gap: 16px; } #judgeme_product_reviews .jm-no-reviews-state__text { font-size: 16px; } #judgeme_product_reviews .jm-action-buttons { justify-content: center; align-items: flex-start; } #judgeme_product_reviews .jm-button { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; font-size: 16px; line-height: 16px; color: #fff; background: #000; border: 0.8px solid #000; border-radius: 8px; cursor: pointer; font-family: inherit; } #judgeme_product_reviews .jm-review-widget__body { min-height: 24px; margin-top: 12px; } #judgeme_product_reviews .jm-review-widget-minimal-header__title { line-height: 27px; }</style><div class="section-padding" id="App--product-reviews"><div class="wrapper"><div class="shopify-block shopify-app-block"><div style="clear:both"></div>` +
+  `<div id="judgeme_product_reviews" class="jdgm-widget jdgm-review-widget jdgm--done-setup-widget jdgm-review-widget--small jdgm-widget-revamp" style="max-width: 1200px; margin: 0 auto;">` +
+  `<div class="jm-stack jm-stack--space-300 jm-review-widget jm-review-widget--minimal-header"><div class="jm-review-widget__header-and-body"><div class="jm-stack jm-stack--space-600 jm-review-widget__header jm-review-widget-minimal-header">` +
+  `<div class="jm-cluster" style="--cluster-justify: space-between; --cluster-align: flex-end; --cluster-space: var(--jm-space-1000); --cluster-wrap: wrap;"><div class="jm-stack jm-stack--space-200"><p class="jm-text jm-review-widget-minimal-header__title" role="heading" aria-level="2" style="--text-size: var(--jm-heading-sm-size); --text-weight: var(--jm-heading-sm-weight-default);">Customer Reviews</p></div></div>` +
+  `<div class="jm-center jm-center--center-text jm-center--intrinsic jm-no-reviews-state" style="--jm-center-max: var(--jm-measure);"><div class="jm-stack jm-stack--space-400"><p class="jm-text jm-no-reviews-state__text" style="--text-size: var(--jm-body-md-size); --text-weight: var(--jm-body-md-weight-default);">Be the first to write a review</p>` +
+  `<div class="jm-cluster jm-action-buttons jm-no-reviews-state__action-buttons" style="--cluster-justify: flex-end; --cluster-align: flex-start; --cluster-space: var(--jm-space-400); --cluster-wrap: wrap;"><div class="jm-stack jm-stack--space-200"><button type="button" class="jm-button jm-button--primary jm-action-buttons__button">Write a review</button></div></div></div></div>` +
+  `</div></div><div class="jm-review-widget__body"></div></div></div><div style="clear:both"></div></div></div></div></section>`;
+
+const PRODUCT_STYLE =
+  `<style>` +
+  `#productTemplate--drift { --PT: 0px; --PB: 0px; }` +
+  `.product__price-wrapper.freshwater * { font-family: Inter, sans-serif; font-size: 16px; } .product__price-wrapper.freshwater { margin-bottom: 5px; }` +
+  `.bundle-selector { display: flex; flex-direction: column; align-items: flex-start; margin-top: 20px; margin-bottom: 20px; } .bundle-selector h4 { width: 100%; font-size: 14px; margin-bottom: 5px; } ` +
+  `.bundle-selector-items { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; width: 100%; } ` +
+  `.bundle-selector .item { width: 100%; max-width: none; min-width: 0; margin: 0; box-sizing: border-box; padding: 5px; border-radius: 5px; text-align: center; font-size: 14px; text-decoration: none; } ` +
+  `.bundle-selector-items.scent-collections, .bundle-selector-items.rollerball { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; width: 100%; } ` +
+  `.bundle-selector .item img.product-selector-img { display: block; max-width: 100%; margin-bottom: 8px; border: 2px solid #F7F7F7; border-radius: 5px; } ` +
+  `.bundle-selector .item.active img.product-selector-img, .bundle-selector .item:hover img.product-selector-img { border: 2px solid #000; } ` +
+  `.bundle-selector .item, .bundle-selector .item h5 { color: #000; font-size: 12px; line-height: 125%; text-decoration: none; text-transform: uppercase; } ` +
+  `.bundle-selector .item.active h5, .bundle-selector .item:hover h5 { color: #000; font-weight: 900; text-decoration: underline; text-underline-offset: 3px; } ` +
+  `@media (max-width: 768px) { .bundle-selector .item { margin: 0 auto; } .bundle-selector .item, .bundle-selector .item h5 { font-size: 11px; } } ` +
+  `#shopify-section-product-main .wrapper {padding: 0;} #shopify-section-product-main .wrapper--full-padded {padding: 0;} ` +
+  `#shopify-section-product-main .product__block.product__price-and-badge {display: none;} #shopify-section-product-main .product__title-and-price {margin-bottom: 0px;}` +
+  `</style>`;
+
+function productMain(p: DriftProduct): string {
+  return (
+    `<main id="MainContent" class="main-content" data-main>` +
+    `<div id="shopify-section-product-main" class="shopify-section shopify-section--product">${PRODUCT_STYLE}` +
+    `<section id="productTemplate--drift" class="section-padding product-single img-in" data-section-id="product-main" data-sticky-enabled="true" data-tall-layout="true">` +
+    `<div class="wrapper--full-padded"><div class="product-single__wrapper product-single__wrapper--grid product-single__wrapper--large" data-product>` +
+    productGallery(p) +
+    productDetails(p) +
+    `</div></div></section></div>` +
+    PRODUCT_ABOUT +
+    `<div data-recently-viewed></div>` +
+    `<div data-related-products>${recentlyViewedSection(SHOP_ALL.filter((item) => item.id !== p.id).slice(0, 4), 'related-products', 'RELATED PRODUCTS')}</div>` +
+    PRODUCT_REVIEWS
+  );
+}
+
 const SCRIPTS = ['/js/tone-init.js', '/js/vendor.js', '/js/theme.js'];
 
 function loadScript(src: string) {
@@ -459,8 +642,37 @@ const prices = (t: string) =>
   (t.replace(/,/g, '').match(/(?:\$|Rs\.?)\s*[\d.]+/gi) || []).map((x) => parseFloat(x.replace(/[^\d.]/g, '')));
 
 /** Whole Tone homepage: Tone's original markup + Tone's own theme scripts. */
-export function ToneHome({ page = 'home', children }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles'; children?: React.ReactNode }) {
+export function ToneHome({ page = 'home', children, product }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles' | 'product'; children?: React.ReactNode; product?: DriftProduct }) {
   const { addItem, openCart } = useCart();
+
+  useEffect(() => {
+    if (page !== 'product' || !product) return;
+    const container = document.querySelector('[data-related-products]');
+    if (container) {
+      container.innerHTML = recentlyViewedSection(randomRelatedProducts(product.id), 'related-products', 'RELATED PRODUCTS');
+    }
+  }, [page, product]);
+
+  useEffect(() => {
+    if (page !== 'product' || !product) return;
+    const key = 'drift-recently-viewed';
+    let history: string[] = [];
+    try {
+      const saved: unknown = JSON.parse(window.localStorage.getItem(key) || '[]');
+      if (Array.isArray(saved)) {
+        history = [...new Set(saved.filter((id): id is string => typeof id === 'string'))]
+          .filter((id) => SHOP_ALL.some((item) => item.id === id));
+      }
+    } catch { /* Browsing still works when storage is unavailable. */ }
+    const previous = history.filter((id) => id !== product.id).slice(0, 4);
+    const products = previous.map((id) => SHOP_ALL.find((item) => item.id === id)!);
+    const container = document.querySelector('[data-recently-viewed]');
+    if (container) container.innerHTML = recentlyViewedSection(products);
+    try {
+      window.localStorage.setItem(key, JSON.stringify([product.id, ...previous]));
+    } catch { /* Storage can be disabled in the browser. */ }
+  }, [page, product]);
+
 
   // Keep our cart (Tone's Shopify cart API doesn't exist here): intercept before theme.js sees the event.
   useEffect(() => {
@@ -472,7 +684,26 @@ export function ToneHome({ page = 'home', children }: { page?: 'home' | 'shop-al
       e.preventDefault();
       e.stopImmediatePropagation();
       const card = form.closest('.product-grid-item') as HTMLElement | null;
-      if (!card) return;
+      if (!card) {
+        const raw = form.getAttribute('data-drift-product');
+        if (raw) {
+          const d = JSON.parse(decodeURIComponent(raw));
+          addItem({
+            id: d.id,
+            slug: d.handle,
+            title: d.title,
+            category: 'Fragrance',
+            price: d.price,
+            compareAtPrice: d.compare || undefined,
+            scent: d.scent,
+            scentNotes: d.notes,
+            scentColor: '#000000',
+            image: d.image,
+          } as ToneProduct);
+          openCart();
+        }
+        return;
+      }
       const text = (s: string) => card.querySelector(s)?.textContent?.replace(/\s+/g, ' ').trim() || '';
       const btn = form.querySelector('[data-add-to-cart]')?.textContent || '';
       const p = prices(card.querySelector('.product-shop-toggle__atc-price-suffix')?.textContent || btn);
@@ -501,6 +732,41 @@ export function ToneHome({ page = 'home', children }: { page?: 'home' | 'shop-al
       const t = e.target as HTMLElement;
       if (t.closest?.('form[data-product-form] [data-add-to-cart], form.quick__form [data-add-to-cart]')) {
         onSubmit(e);
+        return;
+      }
+      // Product page mobile gallery arrows: scroll the photo slider one slide.
+      const arrow = t.closest?.('.product-gallery-mobile-arrow') as HTMLElement | null;
+      if (arrow) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const slider = document.querySelector<HTMLElement>('[data-product-single-media-slider]');
+        if (slider) {
+          const dir = arrow.classList.contains('product-gallery-mobile-arrow--next') ? 1 : -1;
+          slider.scrollBy({ left: dir * slider.clientWidth, behavior: 'smooth' });
+        }
+        return;
+      }
+      // Product page accordions (DETAILS / HOW TO USE): single-open, like Tone's.
+      const accTrig = t.closest?.('.product__accordion__title') as HTMLElement | null;
+      if (accTrig) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const box = document.getElementById(accTrig.getAttribute('aria-controls') || '');
+        if (!box) return;
+        const open = !box.classList.contains('is-expanded');
+        document.querySelectorAll<HTMLElement>('.product__accordion__title').forEach((other) => {
+          const ob = document.getElementById(other.getAttribute('aria-controls') || '');
+          if (ob && ob !== box) {
+            ob.classList.remove('is-expanded');
+            ob.style.height = '0px';
+            other.classList.remove('is-expanded');
+            other.setAttribute('aria-expanded', 'false');
+          }
+        });
+        box.classList.toggle('is-expanded', open);
+        box.style.height = open ? box.scrollHeight + 'px' : '0px';
+        accTrig.classList.toggle('is-expanded', open);
+        accTrig.setAttribute('aria-expanded', String(open));
         return;
       }
       if (t.closest?.('[data-cart-drawer-toggle]')) {
@@ -564,6 +830,16 @@ export function ToneHome({ page = 'home', children }: { page?: 'home' | 'shop-al
 
   // One container so header, <main> and footer are siblings (Tone's footer-reveal script relies on that).
   if (children) return <><div dangerouslySetInnerHTML={{ __html: TOP_HTML }} />{children}<div dangerouslySetInnerHTML={{ __html: TONE_FOOTER_HTML }} /></>;
+
+  if (page === 'product' && product) {
+    return (
+      <div
+        id="tone-root"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: PRODUCT_BODY_SCRIPT + TOP_HTML + productMain(product) + '</main>' + TONE_FOOTER_HTML }}
+      />
+    );
+  }
 
   return (
     <div
