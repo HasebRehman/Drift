@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ToneProduct } from '@/data/driftData';
+import { SHOP_ALL } from '@/data/driftProducts';
+import { parsePrice } from '@/lib/prices';
 
 export interface CartItem {
   id: string;
@@ -33,7 +35,7 @@ interface CartContextType {
   hasFreeShipping: boolean;
 }
 
-const FREE_SHIPPING_THRESHOLD = 49;
+const FREE_SHIPPING_THRESHOLD = 4900;
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -47,7 +49,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = localStorage.getItem('tone_cart_items');
       if (saved) {
-        setItems(JSON.parse(saved));
+        const stored: CartItem[] = JSON.parse(saved);
+        setItems(stored.map(item => {
+          const product = SHOP_ALL.find(product => product.id === item.productId || product.id === item.id || product.title === item.title);
+          return product ? { ...item, price: parsePrice(product.price), compareAtPrice: parsePrice(product.compare) || undefined } : item;
+        }));
       }
     } catch {
       // ignore

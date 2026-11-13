@@ -3,12 +3,124 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-/* Hero banner: fill the first screen (viewport minus announcement bar 31px + header 69px) */
-.banner-image .banner-image__inner.six-fifty-height,
-.banner-image .banner-image__inner.four-fifty-height-mobile {
-  --min-h: calc(100vh - 100px);
-  --min-h: calc(100svh - 100px);
+.drift-collection-hero { position: relative; width: 100%; height: clamp(240px, 28vw, 400px); overflow: hidden; background: #17120d; }
+.drift-collection-hero__title {
+  position: absolute;
+  left: max(24px, 3.5vw);
+  bottom: 28px;
+  margin: 0;
+  color: #fff;
+  font-family: var(--FONT-STACK-HEADING, Inter, sans-serif);
+  font-size: clamp(36px, 4vw, 60px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
 }
+.drift-collection-hero img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 65%; }
+.drift-collection-hero[data-collection="BUNDLES"] img,
+.drift-collection-hero[data-collection="SHOP ALL"] img { object-position: center 40%; }
+@media (max-width: 767px) {
+  .drift-collection-hero { height: 280px; }
+  .drift-collection-hero img { object-fit: cover; object-position: center; }
+}
+
+.drift-instagram {
+  padding: 64px max(20px, 3.5vw);
+  background: #fff;
+  color: #000;
+  border-top: 1px solid #dedede;
+}
+.drift-instagram__heading { text-align: center; margin-bottom: 32px; }
+.drift-instagram h2 { margin: 0 0 12px; font-size: clamp(26px, 3vw, 40px); font-weight: 900; line-height: 1.15; }
+.drift-instagram__heading p, .drift-instagram__empty { font-size: 16px; line-height: 1.6; }
+.drift-instagram__heading p { margin: 0 0 16px; }
+.drift-instagram a { color: inherit; text-decoration: underline; text-underline-offset: 5px; }
+.drift-instagram a:hover { opacity: 0.65; }
+.drift-instagram a:focus-visible { outline: 2px solid #000; outline-offset: 6px; }
+.drift-instagram__empty { text-align: center; color: #555; }
+.drift-instagram__slider { position: relative; }
+.drift-instagram__controls { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.drift-instagram__controls[hidden] { display: none; }
+.drift-instagram__controls button { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: #f7f7f7; color: #000; cursor: pointer; pointer-events: auto; box-shadow: 0 2px 10px #00000014; }
+.drift-instagram__controls [data-instagram-prev] { left: 18px; }
+.drift-instagram__controls [data-instagram-next] { right: 18px; }
+.drift-instagram__controls svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.drift-instagram__controls button:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.drift-instagram__controls button:hover { background: #eee; }
+.drift-instagram__controls button:disabled { display: none; }
+.drift-instagram__carousel { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.drift-instagram__carousel::-webkit-scrollbar { display: none; }
+.drift-instagram__carousel:empty { display: none; }
+.drift-instagram__card { flex: 0 0 calc((100% - 72px) / 4); min-width: 0; scroll-snap-align: start; }
+.drift-instagram__card img, .drift-instagram__card video { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; background: #f2f2f2; }
+.drift-instagram__card video { object-fit: cover; }
+.drift-instagram__card--embed { min-width: 280px; }
+/* Instagram frames are cross-origin. Crop their header/footer around the
+   portrait media rather than trying to change the embedded document. */
+.drift-instagram__media-window { position: relative; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; background: #f2f2f2; container-type: inline-size; }
+.drift-instagram__media-window iframe {
+  position: absolute;
+  top: -61px;
+  left: -1px;
+  display: block;
+  width: calc(100% + 18px);
+  height: calc(100% + 260px);
+  max-width: none;
+  border: 0;
+  background: #fff;
+}
+/* Fill a 4:5 card with the Reel's narrower portrait video. Scale around the
+   media start below Instagram's header, then center the enlarged media. */
+.drift-instagram__media-window--reel iframe {
+  top: calc(-61px - 27.5cqw);
+  transform: scale(1.44);
+  transform-origin: center 61px;
+}
+.drift-instagram__card a { display: inline-block; padding: 16px 0 8px; font-size: 14px; }
+@media (max-width: 1023px) { .drift-instagram__card { flex-basis: calc((100% - 24px) / 2); } }
+@media (max-width: 599px) { .drift-instagram { padding: 44px 20px; } .drift-instagram__carousel { gap: 16px; } .drift-instagram__card { flex-basis: 85%; } }
+
+.drift-brand-story {
+  padding: 64px 24px;
+  background: #eef1f4;
+  color: #252525;
+  text-align: center;
+}
+
+.drift-brand-story__inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.drift-brand-story h2 {
+  margin: 0 0 26px;
+  font-family: var(--FONT-STACK-BODY, sans-serif);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.18em;
+}
+
+.drift-brand-story p {
+  margin: 0 0 28px;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.drift-brand-story a {
+  display: inline-block;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 1px;
+  transition: opacity 180ms ease;
+}
+
+.drift-brand-story a:hover { opacity: 0.65; }
+.drift-brand-story a:focus-visible { outline: 2px solid currentColor; outline-offset: 8px; }
 
 /* Position the hero CTA independently of the removed heading. */
 #SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .banner-image__text-container {
@@ -79,23 +191,21 @@
   opacity: 1;
 }
 
-/* Hero: exactly the image height (8:3) so there is no gap under the header or below the image */
-.banner-image .banner-image__inner.six-fifty-height,
-.banner-image .banner-image__inner.four-fifty-height-mobile {
-  --min-h: 0px;
+/* Fill the opening viewport beneath the actual announcement/header height. */
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .banner-image__inner {
+  --min-h: calc(100svh - var(--drift-hero-top, 100px));
+  height: calc(100vh - var(--drift-hero-top, 100px));
+  height: calc(100svh - var(--drift-hero-top, 100px));
   min-height: 0;
-  aspect-ratio: 8 / 3;
+  aspect-ratio: auto;
 }
+.drift-hero-slide:nth-child(1) { --hero-focus: 55% 50%; }
+.drift-hero-slide:nth-child(2) { --hero-focus: 64% 50%; }
+.drift-hero-slide:nth-child(3) { --hero-focus: 50% 50%; }
 @media (max-width: 767px) {
-  /* phones: taller box so the headline/button fit; image anchored to the top (no gap under the header) */
-  .banner-image .banner-image__inner.six-fifty-height,
-  .banner-image .banner-image__inner.four-fifty-height-mobile {
-    aspect-ratio: auto;
-    min-height: 60svh;
-  }
-  .drift-hero-slide > img {
-    object-position: center top;
-  }
+  .drift-hero-slide:nth-child(1) { --hero-focus: 57% 50%; }
+  .drift-hero-slide:nth-child(2) { --hero-focus: 65% 50%; }
+  .drift-hero-slide:nth-child(3) { --hero-focus: 39% 50%; }
 }
 .drift-hero-slide {
   background: #fff;
@@ -105,8 +215,8 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center;
+  object-fit: cover;
+  object-position: var(--hero-focus, center);
 }
 
 /* No zoom on the hero image (disable Tone's zoom-out / scroll-zoom scaling) */
@@ -154,3 +264,243 @@
 .announcement {
   visibility: visible !important;
 }
+
+/* Product review wizard */
+.drift-review-dialog { position: fixed; inset: 0; margin: auto; width: min(750px, calc(100% - 32px)); height: min(740px, calc(100dvh - 48px)); max-width: none; max-height: none; padding: 38px 50px; border: 0; border-radius: 0; background: #fff; color: #333; overflow-y: auto; }
+.drift-review-dialog[open] { animation: drift-review-open .25s ease-out both; }
+.drift-review-dialog::backdrop { background: rgb(0 0 0 / 50%); animation: drift-review-backdrop .25s ease-out both; }
+.drift-review-dialog.is-closing { animation: drift-review-close 320ms ease-out both; }
+.drift-review-dialog.is-closing::backdrop { animation: drift-review-backdrop-close 320ms ease-out both; }
+.drift-review-dialog [hidden] { display: none !important; }
+.drift-review-dialog h2 { margin: 0; font-family: inherit; font-size: 28px; font-weight: 400; text-align: center; line-height: 1.3; }
+.drift-review-dialog h2:focus { outline: none; }
+.drift-review-intro { text-align: center; font-size: 18px; margin: 16px 0 0; }
+.drift-review-close { position: absolute; top: 8px; right: 16px; font-size: 30px; line-height: 1; background: transparent; border: 0; cursor: pointer; padding: 4px; }
+.drift-review-form { display: flex; flex-direction: column; min-height: 100%; gap: 0; margin: 0; }
+.drift-review-product-image { display: block; width: 200px; height: 200px; object-fit: cover; border-radius: 9px; margin: 90px auto 40px; }
+.drift-review-product-name { text-align: center; font-size: 20px; font-weight: 600; margin: 0 0 28px; }
+.drift-review-form label { display: grid; gap: 10px; font-size: 16px; }
+.drift-review-form input:not([type=radio]):not([type=checkbox]), .drift-review-form textarea { display: block; box-sizing: border-box; width: 100%; padding: 16px 20px; border: 1px solid #bbb; border-radius: 0; background: #fafafa; color: #333; font: inherit; margin: 0; }
+.drift-review-form textarea { resize: vertical; min-height: 230px; }
+.drift-review-form fieldset { padding: 0; margin: 0 auto; border: 0; width: min(370px, 100%); }
+.drift-review-stars { display: flex; justify-content: space-between; gap: 10px; }
+.drift-review-stars label { position: relative; cursor: pointer; width: 60px; }
+.drift-review-stars input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; margin: 0; }
+.drift-review-stars svg { display: block; width: 100%; height: auto; fill: transparent; stroke: #000; stroke-width: 1.6; }
+.drift-review-stars .is-selected svg { fill: #000; }
+.drift-review-stars label:focus-within { outline: 2px solid #111; outline-offset: 3px; }
+.drift-review-scale { display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px; }
+.drift-review-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+[data-review-step="2"] { margin-top: 48px; }
+.drift-review-details { display: grid; gap: 28px; margin-top: 90px; }
+.drift-review-details .drift-review-note { margin-top: -16px; }
+.drift-review-form .drift-review-anonymous { display: flex; align-items: center; gap: 14px; }
+.drift-review-anonymous input { width: 22px; height: 22px; accent-color: #000; margin: 0; }
+[data-review-footer] { margin-top: auto; padding-top: 36px; }
+[data-review-footer] > .drift-review-note { text-align: center; margin-bottom: 24px; }
+.drift-review-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.drift-review-actions button { padding: 16px 28px; border: 0; border-radius: 0; background: transparent; color: #333; cursor: pointer; font: inherit; }
+.drift-review-actions button[type=submit] { min-width: 138px; background: #000; color: #fff; }
+.drift-review-actions button[type=submit]:hover { background: #333; }
+.drift-review-note { font-size: 13px; color: #666; margin: 0; }
+[data-review-error] { color: #c00020; margin: 0 0 16px; }
+[data-review-error]:empty { display: none; }
+.drift-review { padding: 24px 0; border-top: 1px solid #ddd; }
+.drift-review-rating { display: flex; gap: 4px; }
+#judgeme_product_reviews .drift-review > .drift-review-rating { margin-bottom: 0; padding-bottom: 56px; }
+.drift-review-rating svg { width: 30px; height: 30px; fill: none; stroke: #000; stroke-width: 1.7; }
+.drift-review-rating svg.is-filled { fill: #000; }
+.drift-review-author { display: flex; align-items: center; gap: 10px; }
+.drift-review-avatar { display: flex; align-items: center; justify-content: center; width: 54px; height: 54px; flex: 0 0 54px; border-radius: 50%; background: #e8e8e8; color: #000; font-size: 20px; font-weight: 700; }
+.drift-review-author-details { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.drift-review-author-name { font-size: 18px; font-weight: 700; line-height: 1.35; color: #000; overflow-wrap: anywhere; }
+.drift-review-author time { color: #808080; font-size: 16px; line-height: 1.4; }
+.drift-review .drift-review-content { margin: 22px 0 0; color: #000; font-size: 18px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+@keyframes drift-review-open { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drift-review-close { from { opacity: 1; transform: none; } to { opacity: 0; transform: none; } }
+@keyframes drift-review-backdrop-close { from { opacity: 1; } to { opacity: 0; } }
+@keyframes drift-review-backdrop { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 600px) {
+  .drift-review-dialog { width: calc(100% - 24px); height: min(740px, calc(100dvh - 24px)); padding: 40px 22px 24px; }
+  .drift-review-dialog h2 { font-size: 23px; }
+  .drift-review-intro { font-size: 16px; }
+  .drift-review-product-image { width: 160px; height: 160px; margin-top: 48px; margin-bottom: 28px; }
+  .drift-review-details { margin-top: 48px; }
+  .drift-review-stars { gap: 8px; }
+  .drift-review-actions button { padding: 14px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drift-review-dialog[open], .drift-review-dialog::backdrop, .drift-review-dialog.is-closing { animation: none; }
+}
+
+.drift-review-pagination { display: flex; align-items: center; justify-content: center; gap: 10px; border-top: 1px solid #ccc; padding: 16px 0 0; margin-top: 16px; }
+.drift-review-pagination[hidden] { display: none; }
+.drift-review-pagination button { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #000; font: inherit; font-size: 14px; cursor: pointer; }
+.drift-review-pagination button[aria-current="page"] { background: #000; color: #fff; }
+.drift-review-pagination button:not([aria-current]):hover:not(:disabled) { background: #eee; }
+.drift-review-pagination button:disabled { color: #888; cursor: default; }
+.drift-review-pagination button:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.drift-review-pagination svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+#judgeme_product_reviews .jm-review-widget__body { scroll-margin-top: 140px; }
+@media (max-width: 480px) { .drift-review-pagination { gap: 4px; } .drift-review-pagination button { width: 32px; height: 32px; } }
+
+#shopify-section-product-main .drift-product-rating { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 16px; color: #000; text-decoration: none; font-size: 16px; line-height: 1.4; }
+#shopify-section-product-main .drift-product-rating[hidden] { display: none; }
+.drift-product-rating-stars { display: inline-flex; gap: 2px; }
+.drift-product-rating-stars svg { display: block; width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.5; }
+.drift-product-rating:hover > span:last-child { text-decoration: underline; text-underline-offset: 3px; }
+#shopify-section-product-reviews { scroll-margin-top: 140px; }
+
+.drift-about { background: #efefef; color: #111; padding: 48px max(24px, 5vw) 64px; min-height: 60vh; }
+.drift-about__inner { max-width: 1100px; margin: 0 auto; }
+.drift-about h1 { margin: 0 0 64px; text-align: center; font-family: var(--FONT-STACK-BODY, sans-serif); font-size: clamp(28px, 3vw, 36px); font-weight: 400; line-height: 1.3; letter-spacing: .18em; }
+.drift-about__copy { font-size: 18px; line-height: 1.8; text-align: center; }
+.drift-about__copy p { margin: 0 0 24px; }
+.drift-about__copy p:last-child { margin-bottom: 0; }
+.drift-about__copy strong { font-weight: 600; }
+@media (max-width: 600px) { .drift-about { padding: 40px 24px 48px; } .drift-about h1 { margin-bottom: 40px; } .drift-about__copy { font-size: 16px; } }
+
+
+
+/* Keep the homepage slideshow inside a stable frame while scrolling. */
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC { overflow: hidden; isolation: isolate; }
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .banner-image__inner { position: relative; overflow: hidden; }
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .banner-image__image-container,
+#SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC .banner-image__image-inner { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+
+/* Reserve scrollbar space while the review dialog locks page scrolling. */
+html { scrollbar-gutter: stable; }
+
+
+/* Keep the cart mounted so entry and exit can both finish smoothly. */
+.drift-cart-drawer { z-index: 10000; visibility: hidden; pointer-events: none; transition: visibility 0s linear 360ms; }
+.drift-cart-drawer.is-open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.drift-cart-backdrop { opacity: 0; transition: opacity 360ms ease; }
+.drift-cart-panel { height: 100%; transform: translateX(100%); transition: transform 360ms cubic-bezier(.22, 1, .36, 1); outline: none; }
+.drift-cart-drawer.is-open .drift-cart-backdrop { opacity: 1; }
+.drift-cart-drawer.is-open .drift-cart-panel { transform: translateX(0); }
+.drift-cart-item { animation: drift-cart-item-in 300ms ease-out both; }
+@keyframes drift-cart-item-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .drift-cart-drawer, .drift-cart-backdrop, .drift-cart-panel { transition: none; }
+  .drift-cart-item { animation: none; }
+}
+
+/* The theme already compensates for the scrollbar when the navigation opens.
+   Avoid a second reserved gutter along the right edge. */
+html:has(#nav-drawer:not(.cv-h)),
+html:has(body.js-drawer-open) { scrollbar-gutter: auto; }
+/* Keep the separate shopping cart fully hidden while navigation is open. */
+.drift-cart-drawer:not(.is-open) { overflow: clip; }
+html:has(#nav-drawer:not(.cv-h)) .drift-cart-drawer:not(.is-open) { display: none; }
+
+/* Navigation fills the viewport; do not leave the scroll-lock spacer exposed. */
+html:has(#nav-drawer:not(.cv-h)) { overflow: hidden !important; scrollbar-gutter: auto !important; }
+body:has(#nav-drawer:not(.cv-h)) { margin-right: 0 !important; padding-right: 0 !important; width: 100% !important; max-width: 100% !important; }
+body:has(#nav-drawer:not(.cv-h)) .drawer__overlay { right: 0; width: 100vw; }
+
+/* Reference-style cart drawer. */
+.drift-cart-position { position: fixed; inset: 0 0 0 auto; width: min(545px, 100%); }
+.drift-cart-design { width: 100%; display: flex; flex-direction: column; background: #fff; color: #000; font-family: Arial, sans-serif; box-shadow: -5px 0 30px #00000012; }
+.drift-cart-design button { display: inline-flex; justify-content: center; align-items: center; cursor: pointer; font: inherit; color: inherit; border: 0; background: transparent; padding: 0; }
+.drift-cart-design button:focus-visible, .drift-cart-design input:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.drift-cart-heading { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; min-height: 68px; padding: 0 23px; border-bottom: 1px solid #e5e5e5; }
+.drift-cart-heading h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.drift-cart-heading button { width: 32px; height: 32px; }
+.drift-cart-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.drift-cart-rewards { padding: 24px 35px 0; }
+.drift-cart-rewards > p { font-size: 16px; font-style: italic; text-align: center; margin: 0 0 28px; }
+.drift-cart-reward-track { position: relative; height: 10px; border-radius: 20px; background: #e1e1e1; margin-right: 12px; margin-bottom: 64px; }
+.drift-cart-reward-fill { height: 100%; background: #111; border-radius: inherit; transition: width 300ms ease; }
+.drift-cart-reward-point { position: absolute; top: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #e3e3e3; border: 4px solid #fff; color: #555; }
+.drift-cart-reward-point > span { position: absolute; top: 35px; width: 110px; text-align: center; font-size: 12px; line-height: 1.2; color: #000; }
+.drift-cart-recommendations > h3 { margin: 0 0 38px; text-align: center; font-size: 24px; font-weight: 900; letter-spacing: -.02em; }
+.drift-cart-recommendation-slider { display: flex; align-items: center; gap: 8px; padding: 0 6px; }
+.drift-cart-recommendation-slider > button { flex: 0 0 18px; }
+.drift-cart-recommendation { flex: 1; min-width: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 20px; padding: 20px; background: #f6f6f6; border-radius: 12px; }
+.drift-cart-recommendation-image { position: relative; width: 112px; height: 112px; overflow: hidden; border-radius: 4px; }
+.drift-cart-design img { object-fit: cover; }
+.drift-cart-recommendation h4 { font-size: 18px; font-weight: 700; margin: 0 0 8px; line-height: 1.3; }
+.drift-cart-recommendation p { margin: 0 0 12px; font-size: 18px; }
+.drift-cart-design .drift-cart-add { width: 100%; background: #111; color: #fff; height: 42px; font-weight: 700; }
+.drift-cart-products { margin-top: 40px; }
+.drift-cart-product { display: flex; gap: 20px; padding: 32px; border-bottom: 1px solid #e8e8e8; }
+.drift-cart-product-image { position: relative; width: 110px; height: 110px; flex: 0 0 110px; }
+.drift-cart-product-info { flex: 1; min-width: 0; }
+.drift-cart-product-info h3 { font-size: 20px; font-weight: 700; margin: 0 0 8px; line-height: 1.3; }
+.drift-cart-product-info p { margin: 0 0 10px; font-size: 15px; }
+.drift-cart-quantity { display: inline-flex; border: 1px solid #ccc; border-radius: 4px; height: 35px; overflow: hidden; }
+.drift-cart-quantity button { width: 35px; }
+.drift-cart-quantity span { display: grid; place-items: center; min-width: 48px; border-inline: 1px solid #ddd; font-size: 16px; }
+.drift-cart-design .drift-cart-remove { align-self: flex-start; color: #607080; padding: 4px; }
+.drift-cart-checkout { flex-shrink: 0; padding: 28px 25px 22px; border-top: 1px solid #ddd; background: #f6f6f6; }
+.drift-cart-checkout form { display: flex; gap: 14px; margin-bottom: 28px; }
+.drift-cart-checkout input { min-width: 0; flex: 1; width: 100%; margin: 0; border: 1px solid #e0e0e0; border-radius: 10px; background: #fff; font: inherit; font-size: 20px; padding: 14px 16px; color: #111; }
+.drift-cart-checkout form button { border: 1px solid #111; min-width: 112px; font-size: 18px; font-weight: 700; }
+.drift-cart-design .drift-cart-checkout-button { width: 100%; min-height: 63px; background: #111; color: white; font-size: 18px; font-weight: 700; }
+.drift-cart-design button:disabled { opacity: .45; cursor: default; }
+.drift-cart-design .drift-cart-add:hover, .drift-cart-design .drift-cart-checkout-button:hover:not(:disabled) { background: #333; }
+.drift-cart-message { margin: -12px 0 16px; font-size: 13px; line-height: 1.4; }
+.drift-cart-empty { padding: 32px; text-align: center; }
+@media (max-width: 480px) {
+ .drift-cart-recommendation { grid-template-columns: 80px minmax(0, 1fr); padding: 14px; gap: 12px; }
+ .drift-cart-recommendation-image { width: 80px; height: 100px; }
+ .drift-cart-recommendation h4 { font-size: 15px; }
+ .drift-cart-product { padding: 24px 20px; gap: 14px; }
+ .drift-cart-product-image { width: 85px; height: 100px; flex-basis: 85px; }
+ .drift-cart-product-info h3 { font-size: 17px; }
+ .drift-cart-checkout { padding: 20px; }
+ .drift-cart-checkout form button { min-width: 80px; }
+ .drift-cart-checkout input { font-size: 16px; }
+ .drift-cart-rewards { padding-inline: 28px; }
+}
+
+.drift-cart-recommendation-track { display: flex; flex: 1; min-width: 0; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; border-radius: 12px; }
+.drift-cart-recommendation-track::-webkit-scrollbar { display: none; }
+.drift-cart-recommendation-track > .drift-cart-recommendation { flex: 0 0 100%; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; }
+
+/* Contain sideways recommendation scrolling within the cart. */
+.drift-cart-drawer { overflow: hidden; }
+.drift-cart-position { max-width: 100%; overflow: hidden; }
+.drift-cart-design { min-width: 0; overflow: hidden; box-sizing: border-box; }
+.drift-cart-scroll { overflow-x: hidden; width: 100%; box-sizing: border-box; }
+.drift-cart-recommendations, .drift-cart-recommendation-slider { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.drift-cart-recommendation-track { width: 0; scrollbar-width: none !important; -ms-overflow-style: none; }
+.drift-cart-recommendation-track::-webkit-scrollbar { display: none !important; width: 0; height: 0; }
+.drift-cart-recommendation > div { min-width: 0; }
+.drift-cart-recommendation h4, .drift-cart-product-info h3 { overflow-wrap: anywhere; }
+
+/* Keep cart contents scrollable without a visible vertical scrollbar. */
+.drift-cart-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.drift-cart-scroll::-webkit-scrollbar { display: none; width: 0; }
+
+.drift-cart-design .drift-cart-recommendation h4,
+.drift-cart-design .drift-cart-product-info h3 { font-family: Arial, sans-serif; font-size: 20px; font-weight: 600; line-height: 1.3; letter-spacing: 0; text-transform: none; }
+
+/* Override the imported theme's !important 900-weight heading rule in the cart. */
+.drift-cart-design .drift-cart-recommendation h4,
+.drift-cart-design .drift-cart-product-info h3 {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 20px;
+  font-weight: 600 !important;
+  letter-spacing: normal !important;
+  line-height: 1.3 !important;
+}
+
+/* Compact cart discount and checkout controls. */
+.drift-cart-design .drift-cart-checkout { padding: 18px 20px; }
+.drift-cart-design .drift-cart-checkout form { gap: 10px; margin-bottom: 16px; }
+.drift-cart-design .drift-cart-checkout input { padding: 11px 13px; font-size: 16px; border-radius: 7px; height: 46px; box-sizing: border-box; }
+.drift-cart-design .drift-cart-checkout form button { min-width: 88px; font-size: 16px; height: 46px; }
+.drift-cart-design .drift-cart-checkout-button { min-height: 50px; font-size: 16px; }
+
+.drift-cart-position { width: min(460px, 100%); }
+
+/* Scale the rewards and recommendation heading to the narrower cart. */
+.drift-cart-design .drift-cart-rewards { padding: 18px 28px 0; }
+.drift-cart-design .drift-cart-rewards > p { font-size: 14px; margin-bottom: 22px; }
+.drift-cart-design .drift-cart-reward-track { height: 7px; margin-bottom: 48px; }
+.drift-cart-design .drift-cart-reward-point { width: 32px; height: 32px; border-width: 3px; }
+.drift-cart-design .drift-cart-reward-point > svg { width: 17px; height: 17px; }
+.drift-cart-design .drift-cart-reward-point > span { top: 29px; font-size: 11px; }
+.drift-cart-design .drift-cart-recommendations > h3 { font-size: 19px; font-weight: 600 !important; line-height: 1.3 !important; letter-spacing: 0 !important; margin-bottom: 24px; }

@@ -6,6 +6,9 @@ import type { ToneProduct } from '@/data/driftData';
 import { SHOP_ALL, type DriftProduct } from '@/data/driftProducts';
 import { TONE_MAIN_HTML } from './ToneMainContentHtml';
 import { TONE_TOP_HTML, TONE_FOOTER_HTML } from './ToneChromeHtml';
+import { mountInstagramFeed } from '@/components/instagramFeed';
+import { mountProductReviews } from '@/components/productReviews';
+import { parsePrice } from '@/lib/prices';
 
 // Hero: replace Tone's single banner picture with a 3-image crossfading slideshow.
 const HERO_IMAGES = ['/assets/hero_img_1.jpg', '/assets/hero-img-2.jpg', '/assets/hero_img_3.jpg'];
@@ -17,6 +20,7 @@ const HERO_SLIDES =
   ).join('') +
   '</div>';
 function withHeroSlides(html: string) {
+  html = html.replace('banner-image banner-image--zoom-out banner--no-animation card-scrolling-effect--rounded-large section-padding', 'banner-image banner--no-animation section-padding');
   const inner = html.indexOf('data-banner-image>');
   if (inner < 0) return html;
   const start = html.indexOf('<style data-shopify>', inner);
@@ -329,12 +333,33 @@ const TOP_HTML = withSideMenu(TONE_TOP_HTML).replace(
   'site-header site-header--fixed site-header--nav-left site-header--nav-light site-header--has-logo site-header--compress'
 );
 
+const HOME_BRAND_STORY =
+  `<section class="shopify-section drift-brand-story" aria-labelledby="drift-brand-story-title">` +
+  `<div class="drift-brand-story__inner">` +
+  `<h2 id="drift-brand-story-title">OWN YOUR FLOW</h2>` +
+  `<p>Drift is built for the dreamers, creators, and doers who choose progress over comfort. Every fragrance is designed to inspire confidence, self-expression, and momentum because success isn't about standing still. It's about owning every step of your journey.</p>` +
+  `<a href="/pages/about">Learn more</a>` +
+  `</div></section>`;
+
+const HOME_INSTAGRAM =
+  `<section id="drift-instagram" class="shopify-section drift-instagram" aria-labelledby="drift-instagram-title">
+    <div class="drift-instagram__heading"><h2 id="drift-instagram-title">FOLLOW THE FLOW</h2>
+    <p>Scents, stories, and everyday moments with DRIFT.</p>
+    <a href="https://www.instagram.com/drift.retail/" target="_blank" rel="noopener noreferrer">@drift.retail</a></div>
+    <div class="drift-instagram__slider">
+    <div class="drift-instagram__controls" hidden><button type="button" data-instagram-prev aria-label="Previous Instagram posts"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></svg></button><button type="button" data-instagram-next aria-label="Next Instagram posts"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m10 5 7 7-7 7"/></svg></button></div>
+    <div class="drift-instagram__carousel" role="region" aria-label="Latest Instagram posts" tabindex="0"></div>
+    </div>
+    <p class="drift-instagram__empty" role="status">Loading our latest Instagram moments...</p>
+  </section>`;
+
 // Keep the hero artwork clear, with a centered call to action below the midpoint.
 const MAIN_HTML = withDriftProducts(withCategories(withHeroSlides(TONE_MAIN_HTML)))
   .replaceAll('href="/collections"', 'href="/collections/shop-all"')
   .replace(/<p\b[^>]*id="BannerHeading--heading_qgRVFb"[\s\S]*?<\/p>/, '')
   .replace('item--bottom-left text-left text-light', 'item--center text-center text-light')
-  .replace('<span class="text-highlight__break">Shop by scent</span>', '<span class="text-highlight__break">Shop by category</span>');
+  .replace('<span class="text-highlight__break">Shop by scent</span>', '<span class="text-highlight__break">Shop by category</span>')
+  .replace('<div id="shopify-section-template--24202507026729__section_newsletter_YdgKe3"', HOME_BRAND_STORY + '<div id="shopify-section-template--24202507026729__section_newsletter_YdgKe3"');
 
 // ---------------------------------------------------------------------------
 // /collections/shop-all page: Tone collection-page structure + driftretail products,
@@ -409,10 +434,17 @@ function trustRow(): string {
   );
 }
 
-function collectionMain(html: string, products: DriftProduct[]): string {
+function collectionMain(html: string, products: DriftProduct[], heroImage?: string, heroTitle: 'MEN' | 'WOMEN' | 'BUNDLES' | 'SHOP ALL' = 'MEN'): string {
   const id = 'ShopAllCollection';
+  const heroDescriptions = {
+    MEN: 'DRIFT Hero, Rebel and Ignite perfumed mists on dark stone with citrus and cedarwood',
+    WOMEN: 'DRIFT IT Girl and Baddie perfumed mists with berries, jasmine and vanilla on rose stone',
+    BUNDLES: 'DRIFT Hero, Rebel and Ignite trio alongside a Hero and Muse duo on warm stone plinths',
+    'SHOP ALL': 'The full DRIFT fragrance collection with Hero, Muse, Rebel, Ignite, Baddie and IT Girl',
+  };
   return (
     `<main id="MainContent" class="main-content" data-main>` +
+    (heroImage ? `<div class="shopify-section drift-collection-hero" data-collection="${heroTitle}"><img src="${heroImage}" alt="${heroDescriptions[heroTitle]}" width="2172" height="724" loading="eager" fetchpriority="high"><h1 class="drift-collection-hero__title">${heroTitle}</h1></div>` : '') +
     `<div id="shopify-section-main-collection" class="shopify-section shopify-section--collection">` +
     `<style>` +
     `#${id}{padding-top:36px!important;--PT:36px;--grid:repeat(4,minmax(0,1fr));--grid-tablet:repeat(3,minmax(0,1fr));--grid-mobile:repeat(2,minmax(0,1fr))}` +
@@ -430,13 +462,15 @@ function collectionMain(html: string, products: DriftProduct[]): string {
 // Runs while the HTML is parsed (before first paint): collection pages use Tone's collection template styles.
 const COLLECTION_BODY_SCRIPT =
   '<script>document.body.className=document.body.className.replace("template-index","template-collection")</script>';
-const SHOP_ALL_MAIN = collectionMain(TONE_MAIN_HTML, SHOP_ALL);
-const MEN_MAIN = collectionMain(TONE_MAIN_HTML, MEN_PRODUCTS);
-const WOMEN_MAIN = collectionMain(TONE_MAIN_HTML, WOMEN_PRODUCTS);
+const SHOP_ALL_MAIN = collectionMain(TONE_MAIN_HTML, SHOP_ALL, '/assets/shop-all-fragrance-hero.webp', 'SHOP ALL');
+const MEN_MAIN = collectionMain(TONE_MAIN_HTML, MEN_PRODUCTS, '/assets/men-fragrance-hero-v2.webp');
+const WOMEN_MAIN = collectionMain(TONE_MAIN_HTML, WOMEN_PRODUCTS, '/assets/women-fragrance-hero.webp', 'WOMEN');
 // Bundles = the combo products (Hero-Rebel-Ignite, Hero-Muse, ...), which have a single photo each.
 const BUNDLES_MAIN = collectionMain(
   TONE_MAIN_HTML,
-  SHOP_ALL.filter((p) => p.images.length === 1)
+  SHOP_ALL.filter((p) => p.images.length === 1),
+  '/assets/bundles-fragrance-hero.webp',
+  'BUNDLES'
 );
 
 
@@ -533,7 +567,7 @@ function productDetails(p: DriftProduct): string {
     `<div class="product__submit__item ${fixed ? 'product__submit__item--fixed ' : ''}product__submit__item--atc"><button type="submit" name="add" class="btn btn--black btn--solid btn--large btn--submit product__submit__add" data-add-to-cart><span data-add-to-cart-text>Add to Cart</span><em class="loader loader--line"><em class="loader-indeterminate"></em></em></button></div>`;
   return (
     `<div class="product-single__details" data-collapsible-single><div class="form__wrapper is-sticky" data-product-info>` +
-    `<div class="product__block product__title-and-price"><h1 class="product__title" style="--adjust-heading: calc(var(--FONT-ADJUST-HEADING) * 0.8);">${esc(p.title)}</h1></div>` +
+    `<div class="product__block product__title-and-price"><h1 class="product__title" style="--adjust-heading: calc(var(--FONT-ADJUST-HEADING) * 0.8);">${esc(p.title)}</h1><a class="drift-product-rating" data-product-rating href="#shopify-section-product-reviews" hidden></a></div>` +
     `<div class="product__block product__price-and-badge" style="--PBB:20px;"><div class="product__price-wrapper">${priceHtml}</div></div>` +
     `<div class="product__block standard__app"><div class="shopify-block shopify-app-block"><div class="jdgm-widget jdgm-preview-badge jdgm-preview-badge--with-link jdgm--done-setup" style="display: none;"><div class="jdgm-prev-badge" data-average-rating="0.00" data-number-of-reviews="0"><span class="jdgm-prev-badge__stars" data-score="0.00" tabindex="0" aria-label="See all reviews" role="button">${STAR_OFF}</span><span class="jdgm-prev-badge__text">No reviews</span></div></div></div></div>` +
     `<div class="product__block product__description rte" style="--PBB:20px;">${p.description || ''}</div>` +
@@ -623,6 +657,18 @@ function productMain(p: DriftProduct): string {
   );
 }
 
+const ABOUT_MAIN = `<main id="MainContent" class="main-content" data-main>
+  <div class="shopify-section drift-about"><section class="drift-about__inner" aria-labelledby="about-title">
+    <h1 id="about-title">ABOUT US</h1>
+    <div class="drift-about__copy">
+      <p>DRIFT started with a simple idea: <strong>great fragrance shouldn&rsquo;t come with an unreasonable price tag.</strong></p>
+      <p>We create Perfumed Mists that bring together distinctive scents, thoughtful design, and quality you can experience every day.</p>
+      <p>Each fragrance has its own personality, because we believe what you wear should reflect who you are.</p>
+      <p>We&rsquo;re starting with fragrance, but our vision goes beyond it.</p>
+      <p>This is DRIFT. And we&rsquo;re just getting started.</p>
+    </div>
+  </section></div>` + trustRow();
+
 const SCRIPTS = ['/js/tone-init.js', '/js/vendor.js', '/js/theme.js'];
 
 function loadScript(src: string) {
@@ -639,11 +685,46 @@ function loadScript(src: string) {
 }
 
 const prices = (t: string) =>
-  (t.replace(/,/g, '').match(/(?:\$|Rs\.?)\s*[\d.]+/gi) || []).map((x) => parseFloat(x.replace(/[^\d.]/g, '')));
+  (t.replace(/,/g, '').match(/(?:\$|Rs\.?)\s*[\d.]+/gi) || []).map(parsePrice);
 
 /** Whole Tone homepage: Tone's original markup + Tone's own theme scripts. */
-export function ToneHome({ page = 'home', children, product }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles' | 'product'; children?: React.ReactNode; product?: DriftProduct }) {
+export function ToneHome({ page = 'home', children, product }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles' | 'product' | 'about'; children?: React.ReactNode; product?: DriftProduct }) {
   const { addItem, openCart } = useCart();
+
+  useEffect(() => {
+    if (page !== 'home') return;
+    const hero = document.getElementById('SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC');
+    if (!hero) return;
+    const updateHeight = () => {
+      // A compacting sticky header must not resize/re-crop the hero mid-scroll.
+      if (window.scrollY > 1 && hero.style.getPropertyValue('--drift-hero-top')) return;
+      const top = Math.max(0, hero.getBoundingClientRect().top + window.scrollY);
+      hero.style.setProperty('--drift-hero-top', `${top}px`);
+    };
+    updateHeight();
+    const header = document.getElementById('SiteHeader');
+    const observer = new ResizeObserver(updateHeight);
+    if (header) observer.observe(header);
+    window.addEventListener('resize', updateHeight);
+    window.addEventListener('load', updateHeight);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('load', updateHeight);
+    };
+  }, [page]);
+
+  useEffect(() => {
+    if (page !== 'product' || !product) return;
+    const section = document.getElementById('shopify-section-product-reviews');
+    if (section) return mountProductReviews(section, { ...product, image: pImg(product.images[0], 400) });
+  }, [page, product]);
+
+  useEffect(() => {
+    if (page !== 'home') return;
+    const section = document.getElementById('drift-instagram');
+    if (section) return mountInstagramFeed(section);
+  }, [page]);
 
   useEffect(() => {
     if (page !== 'product' || !product) return;
@@ -829,7 +910,9 @@ export function ToneHome({ page = 'home', children, product }: { page?: 'home' |
   }, []);
 
   // One container so header, <main> and footer are siblings (Tone's footer-reveal script relies on that).
-  if (children) return <><div dangerouslySetInnerHTML={{ __html: TOP_HTML }} />{children}<div dangerouslySetInnerHTML={{ __html: TONE_FOOTER_HTML }} /></>;
+  // Content pages have a separate React main element. Keep their footer in
+  // normal flow instead of the theme's sibling-dependent parallax reveal.
+  if (children) return <div id="tone-root"><div dangerouslySetInnerHTML={{ __html: TOP_HTML }} />{children}<div dangerouslySetInnerHTML={{ __html: TONE_FOOTER_HTML.replace('data-parallax="footer"', '') }} /></div>;
 
   if (page === 'product' && product) {
     return (
@@ -845,7 +928,7 @@ export function ToneHome({ page = 'home', children, product }: { page?: 'home' |
     <div
       id="tone-root"
       suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: (page === 'home' ? '' : COLLECTION_BODY_SCRIPT) + TOP_HTML + (page === 'shop-all' ? SHOP_ALL_MAIN : page === 'men' ? MEN_MAIN : page === 'women' ? WOMEN_MAIN : page === 'bundles' ? BUNDLES_MAIN : MAIN_HTML) + '</main>' + TONE_FOOTER_HTML }}
+      dangerouslySetInnerHTML={{ __html: (page === 'home' ? '' : COLLECTION_BODY_SCRIPT) + TOP_HTML + (page === 'about' ? ABOUT_MAIN : page === 'shop-all' ? SHOP_ALL_MAIN : page === 'men' ? MEN_MAIN : page === 'women' ? WOMEN_MAIN : page === 'bundles' ? BUNDLES_MAIN : MAIN_HTML + HOME_INSTAGRAM) + '</main>' + TONE_FOOTER_HTML }}
     />
   );
 }

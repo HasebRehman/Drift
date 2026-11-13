@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { X, Plus, Minus, Trash2 } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ChevronLeft, ChevronRight, Truck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { SHOP_ALL } from '@/data/driftProducts';
+import { parsePrice } from '@/lib/prices';
 
 export function CartDrawer() {
   const {
@@ -12,170 +14,105 @@ export function CartDrawer() {
     closeCart,
     removeItem,
     updateQuantity,
-    totalCount,
+    addItem,
     subtotal,
     freeShippingThreshold,
-    freeShippingProgress,
     hasFreeShipping,
   } = useCart();
 
-  if (!isOpen) return null;
+  const panelRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    panelRef.current?.focus({ preventScroll: true });
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeCart(); }
+      if (event.key !== 'Tab') return;
+      const controls = panelRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), [tabindex="0"]');
+      if (!controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === panelRef.current)) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.documentElement.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus({ preventScroll: true });
+    };
+    // The context recreates closeCart on item changes; keep focus/scroll locked
+    // for the full opening rather than resetting when quantities change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const recommendationTrack = useRef<HTMLDivElement>(null);
+  const [recommendationIndex, setRecommendationIndex] = useState(0);
+  const [discount, setDiscount] = useState('');
+  const [message, setMessage] = useState('');
+  const recommendations = SHOP_ALL.filter(product => !items.some(item => item.productId === product.id));
+  const scrollRecommendation = (direction: number) => {
+    const track = recommendationTrack.current;
+    if (!track) return;
+    const current = Math.round(track.scrollLeft / track.clientWidth);
+    const next = Math.max(0, Math.min(recommendations.length - 1, current + direction));
+    track.scrollTo({ left: next * track.clientWidth, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  };
+  const money = (amount: number) => `Rs.${amount.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const imageUrl = (file: string) => `https://cdn.shopify.com/s/files/1/0739/6166/8743/files/${file}${file.includes('?') ? '&' : '?'}width=300`;
   const leftToSpend = Math.max(0, freeShippingThreshold - subtotal);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-2xs transition-opacity duration-300"
-        onClick={closeCart}
-      />
-
-      {/* Slide-over */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-250">
-          <div>
-            {/* Top Banner */}
-            <div className="bg-black text-white text-[11px] font-medium text-center py-2 px-4 uppercase tracking-wider">
-              Free Shipping &amp; Free Lip Balm on Orders $49+
-            </div>
-
-            {/* Header */}
-            <div className="p-5 border-b border-neutral-100 flex items-center justify-between">
-              <h3 className="font-bold text-base text-black flex items-center">
-                Cart
-                <span className="text-xs text-neutral-400 font-normal ml-2">
-                  {totalCount} items
-                </span>
-              </h3>
-
-              <button
-                type="button"
-                onClick={closeCart}
-                className="p-1 rounded-full text-black hover:opacity-60 transition-opacity"
-                aria-label="Close Cart"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Free Shipping Progress */}
-            <div className="px-5 py-3 border-b border-neutral-100 bg-neutral-50/50">
-              <div className="text-xs text-neutral-700 mb-1.5 font-medium">
-                {hasFreeShipping ? (
-                  <span className="text-emerald-700 font-semibold">
-                    FREE shipping will be applied at checkout
-                  </span>
-                ) : (
-                  <span>
-                    <strong className="text-black font-bold">${leftToSpend}</strong> from Free Shipping
-                  </span>
-                )}
+    <div className={`drift-cart-drawer fixed inset-0 overflow-hidden${isOpen ? ' is-open' : ''}`} inert={!isOpen} aria-hidden={!isOpen}>
+      <div className="drift-cart-backdrop fixed inset-0 bg-black/50" onClick={closeCart} />
+      <div className="drift-cart-position">
+        <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Shopping cart" tabIndex={-1} className="drift-cart-panel drift-cart-design">
+          <header className="drift-cart-heading"><h2>Cart</h2><button onClick={closeCart} aria-label="Close cart"><X size={23} strokeWidth={1.7} /></button></header>
+          <div className="drift-cart-scroll">
+            <section className="drift-cart-rewards" aria-label="Cart rewards">
+              <p role="status">{hasFreeShipping ? 'You unlocked free shipping!' : `${money(leftToSpend)} away from free shipping`}</p>
+              <div className="drift-cart-reward-track">
+                <div className="drift-cart-reward-fill" style={{ width: `${Math.min(100, subtotal / freeShippingThreshold * 100)}%` }} />
+                <span className="drift-cart-reward-point" style={{ left: '100%' }}><Truck size={20} /><span>Free Shipping</span></span>
               </div>
-              <div className="w-full bg-neutral-200 h-1 rounded-full overflow-hidden">
-                <div
-                  className="bg-black h-full rounded-full transition-all duration-300"
-                  style={{ width: `${freeShippingProgress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Items List */}
-            <div className="p-5 max-h-[calc(100vh-280px)] overflow-y-auto divide-y divide-neutral-100">
-              {items.length === 0 ? (
-                <div className="py-16 text-center text-xs text-neutral-500">
-                  Your cart is currently empty.
+            </section>
+            {recommendations.length > 0 && <section className="drift-cart-recommendations" aria-label="Product recommendations">
+              <h3>Complete Your Routine</h3>
+              <div className="drift-cart-recommendation-slider">
+                <button aria-label="Previous recommendation" disabled={recommendationIndex === 0} onClick={() => scrollRecommendation(-1)}><ChevronLeft size={21} /></button>
+                <div ref={recommendationTrack} className="drift-cart-recommendation-track" onScroll={event => { const track = event.currentTarget; setRecommendationIndex(Math.round(track.scrollLeft / track.clientWidth)); }}>
+                {recommendations.map(recommendation => <div key={recommendation.id} className="drift-cart-recommendation" aria-label={recommendation.title}>
+                  <div className="drift-cart-recommendation-image"><Image src={imageUrl(recommendation.images[0])} alt={recommendation.title} fill sizes="112px" /></div>
+                  <div><h4>{recommendation.title}</h4><p>{recommendation.price}</p><button className="drift-cart-add" onClick={() => addItem({ id: recommendation.id, slug: recommendation.handle, title: recommendation.title, price: parsePrice(recommendation.price), image: imageUrl(recommendation.images[0]), category: '', scent: '', scentNotes: '', scentColor: '' })}>Add</button></div>
+                </div>)}
                 </div>
-              ) : (
-                items.map(item => (
-                  <div key={item.id} className="py-4 flex space-x-3.5">
-                    <div className="relative w-16 h-20 bg-neutral-100 rounded-lg overflow-hidden shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        fill
-                        sizes="64px"
-                        className="object-cover"
-                      />
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-bold text-xs text-black leading-snug">
-                            {item.title}
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.id)}
-                            className="text-neutral-400 hover:text-black p-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        {item.scent && (
-                          <div className="text-[11px] text-neutral-500 mt-0.5">
-                            {item.scent} {item.scentNotes && `• ${item.scentNotes}`}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex justify-between items-center mt-3">
-                        <div className="flex items-center border border-neutral-200 rounded-full px-2 py-0.5">
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-0.5 text-neutral-500 hover:text-black"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="px-2 text-xs font-semibold">{item.quantity}</span>
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-0.5 text-neutral-500 hover:text-black"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-xs font-bold text-black font-mono">
-                            ${item.price * item.quantity}
-                          </span>
-                          {item.compareAtPrice && (
-                            <span className="line-through text-neutral-400 text-[10px] ml-1">
-                              ${item.compareAtPrice * item.quantity}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+                <button aria-label="Next recommendation" disabled={recommendationIndex >= recommendations.length - 1} onClick={() => scrollRecommendation(1)}><ChevronRight size={21} /></button>
+              </div>
+            </section>}
+            <div className="drift-cart-products" aria-label="Cart items">
+              {items.length === 0 ? <p className="drift-cart-empty">Your cart is currently empty.</p> : items.map(item => <article key={item.id} className="drift-cart-item drift-cart-product">
+                <div className="drift-cart-product-image"><Image src={item.image} alt={item.title} fill sizes="110px" /></div>
+                <div className="drift-cart-product-info">
+                  <h3>{item.title}</h3><p>{money(item.price * item.quantity)}</p>
+                  <div className="drift-cart-quantity"><button aria-label={`Decrease ${item.title} quantity`} onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus size={12} /></button><span aria-label="Quantity">{item.quantity}</span><button aria-label={`Increase ${item.title} quantity`} onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus size={12} /></button></div>
+                </div>
+                <button className="drift-cart-remove" aria-label={`Remove ${item.title}`} onClick={() => removeItem(item.id)}><Trash2 size={19} /></button>
+              </article>)}
             </div>
           </div>
-
-          {/* Footer Checkout */}
-          {items.length > 0 && (
-            <div className="p-5 border-t border-neutral-100 bg-white space-y-3">
-              <div className="flex justify-between items-center text-xs text-neutral-500">
-                <span>Subtotal</span>
-                <span className="font-bold text-black font-mono text-sm">
-                  ${subtotal}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => alert(`Checking out for $${subtotal}`)}
-                className="w-full bg-black text-white hover:bg-neutral-800 py-3.5 rounded-full font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                Checkout • ${subtotal}
-              </button>
-            </div>
-          )}
+          <footer className="drift-cart-checkout">
+            <form onSubmit={event => { event.preventDefault(); setMessage(discount.trim() ? 'Discount codes will be available when checkout is connected.' : 'Please enter a discount code.'); }}>
+              <input aria-label="Discount code" placeholder="Discount code" value={discount} onChange={event => setDiscount(event.target.value)} /><button type="submit">Apply</button>
+            </form>
+            {message && <p className="drift-cart-message" role="status">{message}</p>}
+            <button className="drift-cart-checkout-button" disabled={!items.length} onClick={() => setMessage('Checkout is not connected yet. Your items are saved in this browser.')}>Checkout &bull; {money(subtotal)}</button>
+          </footer>
         </div>
       </div>
     </div>
