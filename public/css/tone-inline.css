@@ -15,7 +15,7 @@
   font-weight: 900;
   font-style: normal;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/inter/inter_n9.5eeac4b640934cb12c98bb58e5b212c8a842a731.woff2') format("woff2"),
+  src: url('/fonts/inter_n9.5eeac4b640934cb12c98bb58e5b212c8a842a731.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/inter/inter_n9.a68b28f7e46ea1faab81e409809ee4919dd6e3f0.woff') format("woff");
 }
 
@@ -24,7 +24,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2') format("woff2"),
+  src: url('/fonts/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff') format("woff");
 }
 
@@ -33,7 +33,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n5.1ce463e1cc056566f977610764d93d4704464858.woff2') format("woff2"),
+  src: url('/fonts/instrumentsans_n5.1ce463e1cc056566f977610764d93d4704464858.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n5.9079eb7bba230c9d8d8d3a7d101aa9d9f40b6d14.woff') format("woff");
 }
 
@@ -44,7 +44,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/inter/inter_n7.02711e6b374660cfc7915d1afc1c204e633421e4.woff2') format("woff2"),
+  src: url('/fonts/inter_n7.02711e6b374660cfc7915d1afc1c204e633421e4.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/inter/inter_n7.6dab87426f6b8813070abd79972ceaf2f8d3b012.woff') format("woff");
 }
 
@@ -56,7 +56,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/inter/inter_n7.02711e6b374660cfc7915d1afc1c204e633421e4.woff2') format("woff2"),
+  src: url('/fonts/inter_n7.02711e6b374660cfc7915d1afc1c204e633421e4.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/inter/inter_n7.6dab87426f6b8813070abd79972ceaf2f8d3b012.woff') format("woff");
 }
 
@@ -72,7 +72,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n5.1ce463e1cc056566f977610764d93d4704464858.woff2') format("woff2"),
+  src: url('/fonts/instrumentsans_n5.1ce463e1cc056566f977610764d93d4704464858.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n5.9079eb7bba230c9d8d8d3a7d101aa9d9f40b6d14.woff') format("woff");
 }
 
@@ -84,7 +84,7 @@
   font-weight: 400;
   font-style: italic;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2') format("woff2"),
+  src: url('/fonts/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff') format("woff");
 }
 
@@ -96,7 +96,7 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2') format("woff2"),
+  src: url('/fonts/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff') format("woff");
 }
 
@@ -108,7 +108,7 @@
   font-weight: 600;
   font-style: normal;
   font-display: swap;
-  src: url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n6.27dc66245013a6f7f317d383a3cc9a0c347fb42d.woff2') format("woff2"),
+  src: url('/fonts/instrumentsans_n6.27dc66245013a6f7f317d383a3cc9a0c347fb42d.woff2') format("woff2"),
        url('https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n6.1a71efbeeb140ec495af80aad612ad55e19e6d0e.woff') format("woff");
 }
 
@@ -412,7 +412,7 @@
 
 @font-face{
               font-family:"Font-1740082065138";
-              src:url("https:\/\/cdn.shopify.com\/s\/files\/1\/0902\/2013\/4697\/files\/T-Star_Pro_Medium_e36da3af-ccb5-4ce5-a82f-b12577ee4ffc.woff?v=1740082115");
+              src:url("/fonts/t-star-pro-medium.woff");
               font-display:swap;
             }body {font-family:"Font-1740082065138";}@media screen and (max-width: 749px) {body {}}
     
@@ -646,7 +646,6 @@
                       #BannerHeading--heading_qgRVFb.text__heading { --adjust-heading: calc(var(--FONT-ADJUST-HEADING) * 1.45); }
                     }
 
- @media (max-width: 767px) {#shopify-section-template--24202507026729__section_banner_image_nMkEWC * {display: none; }} 
 
 #FeaturedCollection--template--24202507026729__section_collection_8QxVfk {
     --PT: 60px;

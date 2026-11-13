@@ -25,7 +25,7 @@
       
 @font-face{
               font-family:"Font-1740082065138";
-              src:url("https:\/\/cdn.shopify.com\/s\/files\/1\/0902\/2013\/4697\/files\/T-Star_Pro_Medium_e36da3af-ccb5-4ce5-a82f-b12577ee4ffc.woff?v=1740082115");
+              src:url("/fonts/t-star-pro-medium.woff");
               font-display:swap;
             }body {font-family:"Font-1740082065138";}@media screen and (max-width: 749px) {body {}}
     

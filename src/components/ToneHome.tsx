@@ -1,30 +1,26 @@
-'use client';
+import 'server-only';
 
-import React, { useEffect } from 'react';
-import { useCart } from '@/context/CartContext';
-import type { ToneProduct } from '@/data/driftData';
+import React from 'react';
+import { StorefrontRuntime } from './StorefrontRuntime';
 import { SHOP_ALL, type DriftProduct } from '@/data/driftProducts';
 import { TONE_MAIN_HTML } from './ToneMainContentHtml';
 import { TONE_TOP_HTML, TONE_FOOTER_HTML } from './ToneChromeHtml';
-import { mountInstagramFeed } from '@/components/instagramFeed';
-import { mountProductReviews } from '@/components/productReviews';
-import { parsePrice } from '@/lib/prices';
-import { withStoreSearch, mountStoreSearch } from './storeSearch';
-import { withStoreAnnouncement, withStoreFooter, mountStoreChrome } from './storeChrome';
-import { withHomeProductsCarousel, mountHomeProductsCarousel } from './homeProductsCarousel';
-import { withNavigationDrawer, mountNavigationDrawer } from './navigationDrawer';
+import { withStoreSearch } from './storeSearch';
+import { withStoreAnnouncement, withStoreFooter } from './storeChrome';
+import { withHomeProductsCarousel } from './homeProductsCarousel';
+import { withNavigationDrawer } from './navigationDrawer';
 
 // Hero: replace Tone's single banner picture with a 3-image crossfading slideshow.
 const HERO_IMAGES = [
-  { src: '/assets/hero_img_1.jpg', alt: 'DRIFT fragrance lifestyle collection' },
-  { src: '/assets/hero-img-2.jpg', alt: 'IT Girl and Baddie perfumed mists with berries, jasmine and vanilla' },
-  { src: '/assets/hero_img_3.jpg', alt: 'Hero, Muse, Rebel and Ignite perfumed mists' },
+  { src: '/assets/hero-1-1920.webp', alt: 'DRIFT fragrance lifestyle collection' },
+  { src: '/assets/hero-2-1920.webp', alt: 'IT Girl and Baddie perfumed mists with berries, jasmine and vanilla' },
+  { src: '/assets/hero-3-1920.webp', alt: 'Hero, Muse, Rebel and Ignite perfumed mists' },
 ];
 const HERO_SLIDES =
   '<div class="drift-hero-slides" data-drift-hero>' +
   HERO_IMAGES.map(
     (slide, i) =>
-      `<div class="drift-hero-slide${i === 0 ? ' is-active' : ''}"><img src="${slide.src}" alt="${slide.alt}" loading="eager" ${i === 0 ? 'fetchpriority="high"' : ''}></div>`
+      `<div class="drift-hero-slide${i === 0 ? ' is-active' : ''}"><img ${i === 0 ? 'src' : 'data-src'}="${slide.src}" ${i === 0 ? 'srcset' : 'data-srcset'}="/assets/hero-${i+1}-960.webp 960w, /assets/hero-${i+1}-1920.webp 1920w, /assets/hero-${i+1}-2880.webp 2880w" sizes="(max-width: 767px) 1800px, 100vw" alt="${slide.alt}" width="3200" height="1200" decoding="async" ${i === 0 ? 'fetchpriority="high" loading="eager"' : 'fetchpriority="low"'}></div>`
   ).join('') +
   '</div>';
 function withHeroSlides(html: string) {
@@ -143,7 +139,8 @@ function buildProductCard(tpl: string, p: DriftProduct, cfg: CardCfg) {
   c = c.replace(/<img [^>]*>/g, (m) => {
     const idx = k++;
     if (idx >= imgs.length) return m;
-    return `<img src="${imgs[idx]}" alt="${p.title}" width="1000" height="1000" loading="lazy" class="">`;
+    const srcset = [360, 600, 1000].map(width => `${imgs[idx].replace('width=1000', `width=${width}`)} ${width}w`).join(', ');
+    return `<img src="${imgs[idx]}" srcset="${srcset}" sizes="(max-width: 1023px) 50vw, 25vw" alt="${esc(p.title)}" width="1000" height="1000" loading="lazy" decoding="async" class="">`;
   });
   const slideTag = '<div class="product__media__slide" data-hover-slideshow-item>';
   if (imgs.length <= 1) {
@@ -615,15 +612,6 @@ function recentlyViewedSection(products: DriftProduct[], sectionId = 'recently-v
   </section>`;
 }
 
-function randomRelatedProducts(excludeId: string): DriftProduct[] {
-  const products = SHOP_ALL.filter((product) => product.id !== excludeId);
-  for (let i = products.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [products[i], products[j]] = [products[j], products[i]];
-  }
-  return products.slice(0, 4);
-}
-
 const PRODUCT_ABOUT =
   `<div id="shopify-section-product-about" class="shopify-section text"><style>#Text--product-about { --PT: 100px; --PB: 20px; } #Text--heading-product-about.text__heading { --adjust-heading: calc(var(--FONT-ADJUST-HEADING) * 1.3); } #Text--text-product-about.text__content { --adjust-body: calc(var(--FONT-ADJUST-BODY) * 1.2); }</style><section id="Text--product-about" class="section-padding text-section text-dark" data-section-id="product-about" data-section-type="text">` +
   `<div class="wrapper--narrow text-center"><div class="text"><p id="Text--heading-product-about" class="text__heading h2"><span class="text-highlight__break">Fragrance By DRIFT</span></p>` +
@@ -683,276 +671,15 @@ const ABOUT_MAIN = `<main id="MainContent" class="main-content" data-main>
     </div>
   </section></div>` + trustRow();
 
-const SCRIPTS = ['/js/tone-init.js', '/js/vendor.js', '/js/theme.js'];
 const FOOTER_HTML = withStoreFooter(TONE_FOOTER_HTML);
-
-function loadScript(src: string) {
-  return new Promise<void>((resolve) => {
-    if (document.querySelector(`script[data-tone="${src}"]`)) return resolve();
-    const s = document.createElement('script');
-    s.src = src;
-    s.async = false;
-    s.dataset.tone = src;
-    s.onload = () => resolve();
-    s.onerror = () => resolve();
-    document.body.appendChild(s);
-  });
-}
-
-const prices = (t: string) =>
-  (t.replace(/,/g, '').match(/(?:\$|Rs\.?)\s*[\d.]+/gi) || []).map(parsePrice);
-
-/** Whole Tone homepage: Tone's original markup + Tone's own theme scripts. */
+function compact(html: string) { return html.replace(/<!--[\s\S]*?-->/g, '').replace(/>\s+</g, '><'); }
 export function ToneHome({ page = 'home', children, product }: { page?: 'home' | 'shop-all' | 'men' | 'women' | 'bundles' | 'product' | 'about'; children?: React.ReactNode; product?: DriftProduct }) {
-  const { addItem, openCart } = useCart();
-
-  useEffect(() => mountStoreChrome(), [page, product, children]);
-  useEffect(() => mountNavigationDrawer(), [page, product]);
-
-  useEffect(() => {
-    if (page === 'home') return mountHomeProductsCarousel();
-  }, [page]);
-
-  useEffect(() => {
-    if (page !== 'home') return;
-    const hero = document.getElementById('SectionBannerImage--template--24202507026729__section_banner_image_nMkEWC');
-    if (!hero) return;
-    const updateHeight = () => {
-      // A compacting sticky header must not resize/re-crop the hero mid-scroll.
-      if (window.scrollY > 1 && hero.style.getPropertyValue('--drift-hero-top')) return;
-      const top = Math.max(0, hero.getBoundingClientRect().top + window.scrollY);
-      hero.style.setProperty('--drift-hero-top', `${top}px`);
-    };
-    updateHeight();
-    const header = document.getElementById('SiteHeader');
-    const observer = new ResizeObserver(updateHeight);
-    if (header) observer.observe(header);
-    window.addEventListener('resize', updateHeight);
-    window.addEventListener('load', updateHeight);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', updateHeight);
-      window.removeEventListener('load', updateHeight);
-    };
-  }, [page]);
-
-  useEffect(() => {
-    if (page !== 'product' || !product) return;
-    const section = document.getElementById('shopify-section-product-reviews');
-    if (section) return mountProductReviews(section, { ...product, image: pImg(product.images[0], 400) });
-  }, [page, product]);
-
-  useEffect(() => {
-    if (page !== 'home') return;
-    const section = document.getElementById('drift-instagram');
-    if (section) return mountInstagramFeed(section);
-  }, [page]);
-
-  useEffect(() => {
-    if (page !== 'product' || !product) return;
-    const container = document.querySelector('[data-related-products]');
-    if (container) {
-      container.innerHTML = recentlyViewedSection(randomRelatedProducts(product.id), 'related-products', 'RELATED PRODUCTS');
-    }
-  }, [page, product]);
-
-  useEffect(() => {
-    if (page !== 'product' || !product) return;
-    const key = 'drift-recently-viewed';
-    let history: string[] = [];
-    try {
-      const saved: unknown = JSON.parse(window.localStorage.getItem(key) || '[]');
-      if (Array.isArray(saved)) {
-        history = [...new Set(saved.filter((id): id is string => typeof id === 'string'))]
-          .filter((id) => SHOP_ALL.some((item) => item.id === id));
-      }
-    } catch { /* Browsing still works when storage is unavailable. */ }
-    const previous = history.filter((id) => id !== product.id).slice(0, 4);
-    const products = previous.map((id) => SHOP_ALL.find((item) => item.id === id)!);
-    const container = document.querySelector('[data-recently-viewed]');
-    if (container) container.innerHTML = recentlyViewedSection(products);
-    try {
-      window.localStorage.setItem(key, JSON.stringify([product.id, ...previous]));
-    } catch { /* Storage can be disabled in the browser. */ }
-  }, [page, product]);
-
-
-  useEffect(() => mountStoreSearch(), [page]);
-
-  // Keep our cart (Tone's Shopify cart API doesn't exist here): intercept before theme.js sees the event.
-  useEffect(() => {
-    const onSubmit = (e: Event) => {
-      const form = (e.target as HTMLElement)?.closest?.(
-        'form[data-product-form], form.quick__form'
-      ) as HTMLFormElement | null;
-      if (!form) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const card = form.closest('.product-grid-item') as HTMLElement | null;
-      if (!card) {
-        const raw = form.getAttribute('data-drift-product');
-        if (raw) {
-          const d = JSON.parse(decodeURIComponent(raw));
-          addItem({
-            id: d.id,
-            slug: d.handle,
-            title: d.title,
-            category: 'Fragrance',
-            price: d.price,
-            compareAtPrice: d.compare || undefined,
-            scent: d.scent,
-            scentNotes: d.notes,
-            scentColor: '#000000',
-            image: d.image,
-          } as ToneProduct);
-          openCart();
-        }
-        return;
-      }
-      const text = (s: string) => card.querySelector(s)?.textContent?.replace(/\s+/g, ' ').trim() || '';
-      const btn = form.querySelector('[data-add-to-cart]')?.textContent || '';
-      const p = prices(card.querySelector('.product-shop-toggle__atc-price-suffix')?.textContent || btn);
-      const pid = (form.querySelector('input[name="product-id"]') as HTMLInputElement | null)?.value;
-      const idv = (form.querySelector('input[name="id"]') as HTMLInputElement | null)?.value;
-      const title = text('.product-grid-item__title');
-      const sub = text('h3');
-      const img = card.querySelector('img') as HTMLImageElement | null;
-      const product: ToneProduct = {
-        id: idv || pid || title,
-        slug: pid || title,
-        title: title + (sub ? ` - ${sub}` : ''),
-        category: 'SETS',
-        price: p[0] ?? 0,
-        compareAtPrice: p[1],
-        scent: sub || 'Signature',
-        scentNotes: text('.product-cutline') || '',
-        scentColor: '#000000',
-        image: img?.currentSrc || img?.src || '',
-        badge: text('.product-badge, .badge'),
-      };
-      addItem(product);
-      openCart();
-    };
-    const onClick = (e: Event) => {
-      const t = e.target as HTMLElement;
-      if (t.closest?.('form[data-product-form] [data-add-to-cart], form.quick__form [data-add-to-cart]')) {
-        onSubmit(e);
-        return;
-      }
-      // Product page mobile gallery arrows: scroll the photo slider one slide.
-      const arrow = t.closest?.('.product-gallery-mobile-arrow') as HTMLElement | null;
-      if (arrow) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        const slider = document.querySelector<HTMLElement>('[data-product-single-media-slider]');
-        if (slider) {
-          const dir = arrow.classList.contains('product-gallery-mobile-arrow--next') ? 1 : -1;
-          slider.scrollBy({ left: dir * slider.clientWidth, behavior: 'smooth' });
-        }
-        return;
-      }
-      // Product page accordions (DETAILS / HOW TO USE): single-open, like Tone's.
-      const accTrig = t.closest?.('.product__accordion__title') as HTMLElement | null;
-      if (accTrig) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        const box = document.getElementById(accTrig.getAttribute('aria-controls') || '');
-        if (!box) return;
-        const open = !box.classList.contains('is-expanded');
-        document.querySelectorAll<HTMLElement>('.product__accordion__title').forEach((other) => {
-          const ob = document.getElementById(other.getAttribute('aria-controls') || '');
-          if (ob && ob !== box) {
-            ob.classList.remove('is-expanded');
-            ob.style.height = '0px';
-            other.classList.remove('is-expanded');
-            other.setAttribute('aria-expanded', 'false');
-          }
-        });
-        box.classList.toggle('is-expanded', open);
-        box.style.height = open ? box.scrollHeight + 'px' : '0px';
-        accTrig.classList.toggle('is-expanded', open);
-        accTrig.setAttribute('aria-expanded', String(open));
-        return;
-      }
-      if (t.closest?.('[data-cart-drawer-toggle]')) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        openCart();
-      }
-    };
-    window.addEventListener('submit', onSubmit, true);
-    window.addEventListener('click', onClick, true);
-    return () => {
-      window.removeEventListener('submit', onSubmit, true);
-      window.removeEventListener('click', onClick, true);
-    };
-  }, [addItem, openCart]);
-
-  // Always use the hamburger header (compact nav) on every screen width, like the screenshots.
-  useEffect(() => {
-    const header = document.getElementById('SiteHeader');
-    if (!header) return;
-    const force = () => {
-      if (!header.classList.contains('site-header--compress')) header.classList.add('site-header--compress');
-    };
-    force();
-    const mo = new MutationObserver(force);
-    mo.observe(header, { attributes: true, attributeFilter: ['class'] });
-    return () => mo.disconnect();
-  }, []);
-
-  // Collection page uses Tone's collection template styles.
-  useEffect(() => {
-    if (page === 'home') return;
-    document.body.classList.replace('template-index', 'template-collection');
-  }, [page]);
-
-  // Hero slideshow: one image at a time, smooth crossfade every few seconds.
-  useEffect(() => {
-    const slides = Array.from(document.querySelectorAll<HTMLElement>('[data-drift-hero] .drift-hero-slide'));
-    if (slides.length < 2) return;
-    let current = 0;
-    const id = window.setInterval(() => {
-      slides[current].classList.remove('is-active');
-      current = (current + 1) % slides.length;
-      slides[current].classList.add('is-active');
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  // Load Tone's real theme scripts once, then fire DOMContentLoaded so they initialise.
-  useEffect(() => {
-    const w = window as unknown as { __toneBooted?: boolean };
-    if (w.__toneBooted) return;
-    w.__toneBooted = true;
-    (async () => {
-      for (const src of SCRIPTS) await loadScript(src);
-      document.dispatchEvent(new Event('DOMContentLoaded', { bubbles: true }));
-      window.dispatchEvent(new Event('load'));
-      document.documentElement.classList.remove('page-loading');
-    })();
-  }, []);
-
-  // One container so header, <main> and footer are siblings (Tone's footer-reveal script relies on that).
-  // Content pages have a separate React main element. Keep their footer in
-  // normal flow instead of the theme's sibling-dependent parallax reveal.
-  if (children) return <div id="tone-root"><div dangerouslySetInnerHTML={{ __html: TOP_HTML }} />{children}<div dangerouslySetInnerHTML={{ __html: TONE_FOOTER_HTML.replace('data-parallax="footer"', '') }} /></div>;
-
-  if (page === 'product' && product) {
-    return (
-      <div
-        id="tone-root"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: PRODUCT_BODY_SCRIPT + TOP_HTML + productMain(product) + '</main>' + FOOTER_HTML }}
-      />
-    );
-  }
-
-  return (
-    <div
-      id="tone-root"
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: (page === 'home' ? '' : COLLECTION_BODY_SCRIPT) + TOP_HTML + (page === 'about' ? ABOUT_MAIN : page === 'shop-all' ? SHOP_ALL_MAIN : page === 'men' ? MEN_MAIN : page === 'women' ? WOMEN_MAIN : page === 'bundles' ? BUNDLES_MAIN : MAIN_HTML + HOME_INSTAGRAM) + '</main>' + FOOTER_HTML }}
-    />
-  );
+  const cards = page === 'product' ? SHOP_ALL.map(item => ({ id: item.id, html: compact(collectionCards(TONE_MAIN_HTML, [item])) })) : undefined;
+  const html = product && page === 'product'
+    ? PRODUCT_BODY_SCRIPT + TOP_HTML + productMain(product) + '</main>' + FOOTER_HTML
+    : (page === 'home' ? '' : COLLECTION_BODY_SCRIPT) + TOP_HTML + (page === 'about' ? ABOUT_MAIN : page === 'shop-all' ? SHOP_ALL_MAIN : page === 'men' ? MEN_MAIN : page === 'women' ? WOMEN_MAIN : page === 'bundles' ? BUNDLES_MAIN : MAIN_HTML + HOME_INSTAGRAM) + '</main>' + FOOTER_HTML;
+  return <StorefrontRuntime key={page + (product?.id || '')} page={page} product={product} productImage={product ? pImg(product.images[0], 400) : undefined} cards={cards}>
+    {children ? <div id="tone-root"><div dangerouslySetInnerHTML={{ __html: compact(TOP_HTML) }} />{children}<div dangerouslySetInnerHTML={{ __html: compact(TONE_FOOTER_HTML.replace('data-parallax="footer"', '')) }} /></div>
+      : <div id="tone-root" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: compact(html) }} />}
+  </StorefrontRuntime>;
 }

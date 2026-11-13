@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ToneProduct } from '@/data/driftData';
 import { SHOP_ALL } from '@/data/driftProducts';
 import { parsePrice } from '@/lib/prices';
@@ -71,11 +71,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, mounted]);
 
-  const openCart = () => setIsOpen(true);
-  const closeCart = () => setIsOpen(false);
-  const toggleCart = () => setIsOpen(prev => !prev);
+  const openCart = useCallback(() => setIsOpen(true), []);
+  const closeCart = useCallback(() => setIsOpen(false), []);
+  const toggleCart = useCallback(() => setIsOpen(prev => !prev), []);
 
-  const addItem = (product: ToneProduct, quantity = 1) => {
+  const addItem = useCallback((product: ToneProduct, quantity = 1) => {
     const cartItemId = `${product.id}`;
 
     setItems(prev => {
@@ -103,32 +103,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
 
     setIsOpen(true);
-  };
+  }, []);
 
-  const removeItem = (itemId: string) => {
+  const removeItem = useCallback((itemId: string) => {
     setItems(prev => prev.filter(i => i.id !== itemId));
-  };
+  }, []);
 
-  const updateQuantity = (itemId: string, quantity: number) => {
+  const updateQuantity = useCallback((itemId: string, quantity: number) => {
     if (quantity <= 0) {
       removeItem(itemId);
       return;
     }
     setItems(prev => prev.map(i => (i.id === itemId ? { ...i, quantity } : i)));
-  };
+  }, [removeItem]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+  }, []);
 
   const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const freeShippingProgress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
   const hasFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
 
-  return (
-    <CartContext.Provider
-      value={{
+  const value = useMemo(() => ({
         isReady: mounted,
         items,
         isOpen,
@@ -144,8 +142,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
         freeShippingProgress,
         hasFreeShipping,
-      }}
-    >
+      }), [mounted, items, isOpen, openCart, closeCart, toggleCart, addItem, removeItem, updateQuantity, clearCart, totalCount, subtotal, freeShippingProgress, hasFreeShipping]);
+  return (
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );

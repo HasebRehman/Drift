@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
+import { StoreNavigation } from '@/components/StoreNavigation';
 
 export const metadata: Metadata = {
   title: 'DRIFT | Own Your Flow — Perfumed Mists',
@@ -23,21 +24,21 @@ export default function RootLayout({
         <link
           rel="preload"
           as="font"
-          href="https://tone.shop/cdn/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2"
+          href="/fonts/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2"
           type="font/woff2"
           crossOrigin="anonymous"
         />
         <link
           rel="preload"
           as="font"
-          href="https://tone.shop/cdn/fonts/inter/inter_n9.5eeac4b640934cb12c98bb58e5b212c8a842a731.woff2"
+          href="/fonts/inter_n9.5eeac4b640934cb12c98bb58e5b212c8a842a731.woff2"
           type="font/woff2"
           crossOrigin="anonymous"
         />
         <link
           rel="preload"
           as="font"
-          href="https://cdn.shopify.com/s/files/1/0902/2013/4697/files/T-Star_Pro_Medium_e36da3af-ccb5-4ce5-a82f-b12577ee4ffc.woff?v=1740082115"
+          href="/fonts/t-star-pro-medium.woff"
           type="font/woff"
           crossOrigin="anonymous"
         />
@@ -52,7 +53,7 @@ export default function RootLayout({
         id="tone-new-era-of-personal-care-deodorant-lotion-amp-lip-balm"
         className="template-index palette--light no-outline"
       >
-        <CartProvider>{children}</CartProvider>
+        <CartProvider><StoreNavigation />{children}</CartProvider>
       </body>
     </html>
   );

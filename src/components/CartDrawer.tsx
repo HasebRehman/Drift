@@ -47,12 +47,9 @@ export function CartDrawer() {
     return () => {
       document.documentElement.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKeyDown);
-      previousFocus?.focus({ preventScroll: true });
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
-    // The context recreates closeCart on item changes; keep focus/scroll locked
-    // for the full opening rather than resetting when quantities change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, closeCart]);
 
   const recommendationTrack = useRef<HTMLDivElement>(null);
   const [recommendationIndex, setRecommendationIndex] = useState(0);

@@ -1,4 +1,3 @@
-'use client';
 
 import { ToneHome } from './ToneHome';
 import { CartDrawer } from './CartDrawer';

@@ -44,7 +44,12 @@ instance, using the same values across instances of a deployment.
 - The white page contains a centered password field and Enter button.
 - The correct password opens the originally requested page.
 - An incorrect password stays on the password page.
-- Access expires after 24 hours. A private browser window starts locked.
+- Correct password entry grants access for 24 hours, including across new tabs
+  and browser restarts in the same browser profile. Browsing does not extend it.
+- After 24 hours, the server requires the password again on the next request.
+- Access uses a signed, persistent HttpOnly cookie with `Max-Age=86400` and a
+  matching server-side expiry. No per-tab or session-storage unlock is required.
+- Clearing cookies or using a different/private browser profile requires login.
 - Changing either private variable invalidates existing access cookies after restart/redeploy.
 - Missing or invalid configuration keeps the storefront locked.
 - Cookies are signed, HttpOnly, SameSite=Lax, and Secure in production.

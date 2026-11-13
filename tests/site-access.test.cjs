@@ -55,15 +55,26 @@ test('site password gate', async () => {
   assert.match(cookie, /HttpOnly/);
   assert.match(cookie, /Secure/);
   assert.match(cookie, /SameSite=lax/i);
+  assert.match(cookie, /Max-Age=86400/i);
   assert(!cookie.includes(password));
   const pair = cookie.split(';')[0];
   const allowed = await proxy(request('/products/hero-confidence', { headers: { cookie: pair } }));
   assert.equal(allowed.headers.get('x-middleware-next'), '1');
+  assert.match(allowed.headers.get('cache-control'), /no-store/);
+  const asset = await proxy(request('/fonts/t-star-pro-medium.woff', { headers: { cookie: pair } }));
+  assert.equal(asset.headers.get('x-middleware-next'), '1');
+  assert.match(asset.headers.get('cache-control'), /no-store/);
+  const api = await proxy(request('/api/instagram', { headers: { cookie: pair } }));
+  assert.match(api.headers.get('cache-control'), /no-store/);
+  assert.equal((await proxy(request('/password', { headers: { cookie: pair } }))).status, 303, 'A valid 24-hour session skips the password form');
+  assert.equal((await login('wrong', { headers: { cookie: pair, accept: 'application/json' } })).status, 401, 'Existing browser access cannot skip password verification');
+  const oldCookie = pair.replace('drift_site_session=', 'drift_site_access=');
+  assert.equal((await proxy(request('/', { headers: { cookie: oldCookie } }))).status, 303, 'Old persistent cookies are invalid');
   const tampered = await proxy(request('/', { headers: { cookie: pair + 'x' } }));
   assert.equal(tampered.status, 303);
   const expired = `1.${'a'.repeat(32)}`;
   const key = crypto.createHmac('sha256', env.SITE_ACCESS_SECRET).update(password).digest();
-  const expiredCookie = `drift_site_access=${expired}.${crypto.createHmac('sha256', key).update(expired).digest('base64url')}`;
+  const expiredCookie = `drift_site_session=${expired}.${crypto.createHmac('sha256', key).update(expired).digest('base64url')}`;
   assert.equal((await proxy(request('/', { headers: { cookie: expiredCookie } }))).status, 303);
 
   const external = await login(password, { next: '//evil.example' });
@@ -79,4 +90,27 @@ test('site password gate', async () => {
   delete env.SITE_PASSWORD;
   assert.equal((await proxy(request('/password'))).status, 503);
   assert.equal((await proxy(request('/'))).status, 303);
+});
+
+test('access remains valid for 24 hours without navigation extending its expiry', async () => {
+  let now = Date.now();
+  class Clock extends Date { static now() { return now; } }
+  const isolatedEnv = { SITE_PASSWORD: password, SITE_ACCESS_SECRET: crypto.randomBytes(32).toString('hex'), NODE_ENV: 'production' };
+  const isolated = { exports: {} };
+  vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/proxy.ts', 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+  }).outputText, { exports: isolated.exports, module: isolated, require, process: { env: isolatedEnv }, Buffer, URL, Date: Clock, Map });
+  const gate = isolated.exports.proxy;
+  const response = await gate(request('/password', { method: 'POST', headers: { origin }, body: new URLSearchParams({ password }) }));
+  const cookie = response.headers.get('set-cookie');
+  assert.match(cookie, /Max-Age=86400/i);
+  const pair = cookie.split(';')[0];
+  now += 86399 * 1000;
+  const valid = await gate(request('/', { headers: { cookie: pair } }));
+  assert.equal(valid.headers.get('x-middleware-next'), '1');
+  assert.equal(valid.headers.has('set-cookie'), false, 'Browsing does not restart the 24-hour clock');
+  now += 1000;
+  const expired = await gate(request('/', { headers: { cookie: pair } }));
+  assert.equal(expired.status, 303);
+  assert.equal(new URL(expired.headers.get('location')).pathname, '/password');
 });

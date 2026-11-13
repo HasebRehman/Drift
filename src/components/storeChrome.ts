@@ -30,13 +30,21 @@ export function mountStoreChrome() {
   let active = true;
   const measure = () => {
     if (!active) return;
+    // Read all geometry before writing styles to avoid repeated forced layouts.
+    const announcementHeight = announcement?.getBoundingClientRect().height;
+    const headerHeight = header?.getBoundingClientRect().height;
+    const groupWidth = group?.getBoundingClientRect().width;
+    const footerHeight = footer?.offsetHeight;
+    const set = (element: HTMLElement, name: string, value: string) => {
+      if (element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value);
+    };
     if (root && announcement && header) {
-      root.style.setProperty('--drift-announcement-height', `${announcement.getBoundingClientRect().height}px`);
-      root.style.setProperty('--drift-header-height', `${header.getBoundingClientRect().height}px`);
+      set(root, '--drift-announcement-height', `${announcementHeight}px`);
+      set(root, '--drift-header-height', `${headerHeight}px`);
     }
-    if (track && group) track.style.setProperty('--drift-marquee-duration', `${group.getBoundingClientRect().width / 60}s`);
+    if (track && groupWidth) set(track, '--drift-marquee-duration', `${groupWidth / 60}s`);
     if (footer && footerSection && main) {
-      footerSection.style.setProperty('--drift-footer-height', `${footer.offsetHeight}px`);
+      set(footerSection, '--drift-footer-height', `${footerHeight}px`);
       footerSection.classList.add('drift-footer-reveal');
       main.classList.add('drift-footer-cover');
     }

@@ -16,6 +16,14 @@ export function mountInstagramFeed(section: HTMLElement) {
   const prev = section.querySelector<HTMLButtonElement>('[data-instagram-prev]')!;
   const next = section.querySelector<HTMLButtonElement>('[data-instagram-next]')!;
   const controller = new AbortController();
+  const mediaObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const iframe = entry.target as HTMLIFrameElement;
+      if (iframe.dataset.src) { iframe.src = iframe.dataset.src; delete iframe.dataset.src; }
+      mediaObserver.unobserve(iframe);
+    }
+  }, { root: track, rootMargin: '0px 60% 0px 0px' });
   let ids = '';
   const update = () => {
     prev.disabled = track.scrollLeft < 2;
@@ -67,12 +75,13 @@ export function mountInstagramFeed(section: HTMLElement) {
       viewport.className = 'drift-instagram__media-window';
       if (url.includes('/reel/')) viewport.classList.add('drift-instagram__media-window--reel');
       const iframe = document.createElement('iframe');
-      iframe.src = `${url}embed/`;
+      iframe.dataset.src = `${url}embed/`;
       iframe.title = `DRIFT Instagram ${url.includes('/reel/') ? 'Reel' : 'post'} ${index + 1}`;
       iframe.loading = 'lazy';
       iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
       iframe.allowFullscreen = true;
       iframe.setAttribute('scrolling', 'no');
+      mediaObserver.observe(iframe);
       viewport.append(iframe);
       card.append(viewport);
       return card;
@@ -85,5 +94,5 @@ export function mountInstagramFeed(section: HTMLElement) {
     void refresh();
     timer = window.setInterval(() => { if (!document.hidden) void refresh(); }, 300000);
   }
-  return () => { controller.abort(); clearInterval(timer); observer.disconnect(); prev.removeEventListener('click', previous); next.removeEventListener('click', following); track.removeEventListener('scroll', update); };
+  return () => { controller.abort(); clearInterval(timer); observer.disconnect(); mediaObserver.disconnect(); prev.removeEventListener('click', previous); next.removeEventListener('click', following); track.removeEventListener('scroll', update); };
 }

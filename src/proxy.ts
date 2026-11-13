@@ -1,7 +1,8 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
-const COOKIE = 'drift_site_access';
+// Persistent signed access, bounded by the same 24-hour server expiry.
+const COOKIE = 'drift_site_session';
 const SESSION_SECONDS = 24 * 60 * 60;
 const WINDOW_MS = 15 * 60 * 1000;
 // Per-process protection. Configure hosting-level rate limits for multiple instances.
@@ -64,7 +65,7 @@ function passwordPage(next: string, message = '', status = 200) {
     <label for="password">Enter password</label>
     <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024" autofocus${message ? ' aria-describedby="message" aria-invalid="true"' : ''}>
     <input type="hidden" name="next" value="${escapeHtml(next)}">
-    <button type="submit">Enter</button>${message ? `<p id="message" role="alert">${escapeHtml(message)}</p>` : ''}
+    <button type="submit">Enter</button><p id="message" role="alert">${escapeHtml(message)}</p>
     </form></main></body></html>`, { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   response.headers.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -81,7 +82,9 @@ export async function proxy(request: NextRequest) {
   const authenticated = config && validSession(request.cookies.get(COOKIE)?.value, config.key);
 
   if (isPasswordPage) {
-    if (authenticated) return noStore(NextResponse.redirect(new URL(next, request.url), 303));
+    if (authenticated && ['GET', 'HEAD'].includes(request.method)) {
+      return noStore(NextResponse.redirect(new URL(next, request.url), 303));
+    }
     if (request.method === 'GET' || request.method === 'HEAD') {
       return passwordPage(next, config ? '' : 'Access is temporarily unavailable.', config ? 200 : 503);
     }
